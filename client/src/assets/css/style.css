@@ -1,0 +1,2505 @@
+/*==================================================
+        DIEN MAY NK - SYSTEM VARIABLES & RESET
+==================================================*/
+:root {
+    --primary: #FFC107;
+    --primary-hover: #FFB300;
+    --secondary: #0D6EFD;
+    --dark: #222222;
+    --white: #ffffff;
+    --text: #333333;
+    --gray: #f8f9fa;
+    --border: #e8e8e8;
+    --danger: #dc3545;
+    --transition: all .25s ease-in-out;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text);
+    background: var(--gray);
+}
+
+/* overflow-x:hidden đặt ở #root thay vì body/html - Safari iOS có lỗi nổi
+   tiếng: hễ body/html có overflow khác "visible" là các phần tử
+   position:fixed (ChatWidget, CompareBar, contact-fab, backToTop...) tính
+   sai vị trí so với khung nhìn thật, có thể biến mất hẳn khỏi màn hình dù
+   Chrome desktop/emulator không tái hiện được lỗi này (chỉ WebKit thật mới
+   dính). #root là 1 div thường (không phải phần tử scroll gốc của trang)
+   nên không kích hoạt lỗi trên, vẫn chặn tràn ngang y hệt như đặt ở body. */
+#root {
+    overflow-x: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* KHÔNG đặt height cố định ở đây - -webkit-line-clamp:2 tự giới hạn đúng 2
+   dòng theo line-height thật, không cần biết trước chiều cao. Từng có
+   height:38px cứng dùng chung cho MỌI nơi áp class này (cỡ chữ khác nhau từ
+   14px tới 20px) - đủ cho chữ 14px nhưng chữ 20px (tiêu đề bài viết nổi bật)
+   cần hơn 38px cho đủ 2 dòng, bị cắt cụt dòng 2 giữa chừng. Nơi cần chừa chỗ
+   đều cao (lưới thẻ sản phẩm) đã tự có min-height riêng (xem
+   .product-card .product-title), không phụ thuộc giá trị ở đây. */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/*==================================================
+        HEADER COMPONENT & NAVIGATION
+==================================================*/
+#site-header {
+    position: relative;
+    width: 100%;
+    z-index: 999;
+    background: var(--white);
+}
+
+#site-header.sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: 0 5px 20px rgba(0,0,0,.1);
+    animation: headerDown .35s ease-in-out;
+}
+
+/* Cuộn xuống thì chỉ giữ lại phần main-header (logo, danh mục, tìm kiếm, giỏ
+   hàng, tài khoản) - ẩn hẳn top-bar (hotline, menu phụ) để thanh dính gọn
+   hơn, không chiếm nhiều chiều cao màn hình. */
+#site-header.sticky .top-bar {
+    display: none;
+}
+
+@keyframes headerDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+.top-bar { background: var(--dark); color: var(--white); padding: 8px 0; font-size: 14px; }
+.top-left { display: flex; align-items: center; gap: 8px; }
+.top-left i { color: var(--primary); }
+/* flex-wrap: nowrap (giữ tường minh dù đã là default) + white-space: nowrap
+   trên từng link - không có dòng này, mục dài (vd "Câu hỏi thường gặp") bị
+   co hẹp lại theo flex-shrink mặc định rồi TỰ NGẮT DÒNG giữa chừng khi cột
+   không đủ rộng cho tất cả, trông vỡ giao diện (bug thật đã gặp khi thêm
+   mục "Livestream" thành 6 mục). Giảm gap 24px -> 18px cho dư chỗ hơn. */
+.top-menu { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 18px; }
+/* white-space: nowrap - không có dòng này thì mục dài (vd "Câu hỏi thường
+   gặp") bị co hẹp theo flex-shrink mặc định rồi TỰ NGẮT DÒNG giữa chừng khi
+   cột không đủ rộng cho tất cả, trông vỡ giao diện (bug thật đã gặp khi
+   thêm mục "Livestream" thành 6 mục, xem thêm ghi chú đổi mốc hiện d-lg
+   thay vì d-md ở Header.jsx). Không có rule color này thì link rơi về màu
+   link mặc định của Bootstrap (#0d6efd) thay vì kế thừa color:var(--white)
+   từ .top-bar - `a { color }` của Bootstrap trực tiếp nhắm vào thẻ <a> nên
+   LUÔN thắng inheritance dù .top-bar có specificity cao hơn (inheritance
+   chỉ áp dụng khi không có rule nào trực tiếp khớp thẻ đó). Xanh dương trên
+   nền #222222 chỉ đạt ~3.5:1, dưới chuẩn WCAG AA 4.5:1 - PageSpeed Insights
+   (Lighthouse accessibility) từng gắn cờ đúng 5 link này. */
+.top-menu a { color: var(--white); white-space: nowrap; }
+.top-menu a:hover { color: var(--primary); }
+
+.main-header { background: var(--primary); padding: 15px 0; }
+.logo img { max-width: min(190px, 100%); height: auto; transition: var(--transition); }
+.logo:hover img { transform: scale(1.03); }
+
+.search-box { display: flex; align-items: center; background: var(--white); height: 46px; border-radius: 50px; padding: 0 5px 0 15px; position: relative; }
+.search-box input { flex: 1; border: none; outline: none; padding: 0 10px; font-size: 14px; }
+.search-box button { height: 36px; border: none; border-radius: 50px; background: var(--secondary); color: var(--white); padding: 0 25px; font-weight: 600; transition: var(--transition); white-space: nowrap; flex-shrink: 0; }
+.search-box button:hover { background: #004fc4; }
+
+.header-right { display: flex; justify-content: space-between; align-items: center; gap: 12px; container-type: inline-size; }
+.header-item { display: flex; align-items: center; gap: 8px; background: var(--white); padding: 6px 12px; border-radius: 10px; }
+.header-item i { font-size: 20px; color: var(--secondary); }
+.header-item small { display: block; font-size: 11px; color: #777; white-space: nowrap; }
+.header-item strong { display: block; font-size: 13px; white-space: nowrap; }
+
+/* Ở tier lg (~992-1199px, ví dụ iPad Pro) cột header-right quá hẹp để chứa
+   đủ icon so sánh + khối "Tài khoản/Đăng nhập" 2 dòng + nút giỏ hàng, chữ
+   bị bóp xuống dòng xấu - ẩn khối chữ, chỉ giữ icon khi cột chưa đủ rộng. */
+.header-item > div { display: none; }
+@container (min-width: 300px) {
+    .header-item > div { display: block; }
+}
+
+.header-icon { width: 38px; height: 38px; background: var(--white); border: none; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; transition: var(--transition); cursor: pointer; }
+.header-icon:hover { background: var(--secondary); color: var(--white); }
+
+.scale-icon { width: 1em; height: 1em; vertical-align: -0.15em; overflow: visible; }
+
+/* Tooltip CSS tự làm - hiện ngay lập tức khi hover, không bị delay mặc định
+   của title attribute trình duyệt (OS-controlled, không chỉnh được). */
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(2px);
+    margin-top: 6px;
+    background: var(--dark);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 6px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.1s ease;
+    z-index: 30;
+}
+[data-tooltip]:hover::after { opacity: 1; visibility: visible; }
+
+.cart-btn { height: 44px; background: var(--dark); border-radius: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 0 16px; position: relative; color: var(--white); cursor: pointer; transition: var(--transition); white-space: nowrap; }
+.cart-btn:hover { background: #000; color: var(--white); }
+.cart-btn i { font-size: 18px; }
+.cart-btn-label { font-size: 14px; font-weight: 600; }
+
+/* Header rút gọn còn ĐÚNG 1 hàng trên điện thoại (icon logo vuông + ô tìm
+   kiếm + giỏ hàng), giống kiểu các sàn TMĐT lớn (CellphoneS...) - mặc định
+   Bootstrap grid tách thành 2 hàng (logo+giỏ hàng trước, ô tìm kiếm col-12
+   xuống hàng riêng sau) vì ô tìm kiếm chiếm trọn 12 cột ở tier mobile. Ép
+   .row thành flex không-wrap rồi tự set lại width theo vai trò từng cột
+   (logo/giỏ hàng co theo nội dung, ô tìm kiếm giãn chiếm hết phần còn lại).
+   order dùng !important vì phải thắng .order-2/.order-3 của Bootstrap (JSX
+   vẫn giữ nguyên để không ảnh hưởng bố cục tablet/desktop). */
+@media (max-width: 767.98px) {
+    .main-header { padding: 10px 0; }
+    .main-header .row { flex-wrap: nowrap; }
+    .header-logo-col {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+    /* width CỐ ĐỊNH (không phải "auto" tự co theo nội dung) - .header-right
+       bên trong có container-type: inline-size (dùng cho container query
+       khác ở @container), containment đó khiến trình duyệt KHÔNG tính được
+       kích thước tự nhiên của nút giỏ hàng khi cột cha cũng đang tự co theo
+       nội dung ("auto" + "auto" lồng nhau) - cột co sập gần bằng 0, nút giỏ
+       hàng tràn ra ngoài đè lên ô tìm kiếm. Đặt hẳn 1 con số đủ chỗ cho icon
+       giỏ hàng (18px) + số lượng + padding thì không còn phụ thuộc phép tính
+       "tự co" bị hỏng đó nữa. */
+    .header-actions-col {
+        flex: 0 0 auto !important;
+        width: 44px !important;
+        max-width: none !important;
+    }
+    .header-search-col {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+    /* Bootstrap .order-3/.order-2 (JSX) đã có !important, cùng độ đặc hiệu 1
+       class thì thắng theo thứ tự nạp CSS sau (bundle Bootstrap nạp sau
+       style.css) - phải ghép 2 class (đã cùng có mặt trên phần tử qua JSX)
+       để tăng độ đặc hiệu hơn hẳn Bootstrap, không phụ thuộc thứ tự nạp nữa. */
+    .header-search-col.order-3 { order: 2 !important; }
+    .header-actions-col.order-2 { order: 3 !important; }
+    .logo-mobile img { width: 34px; height: 34px; border-radius: 8px; display: block; }
+    .search-box { height: 38px; padding: 0 4px 0 12px; }
+    .header-right { justify-content: flex-end; gap: 8px; }
+    .cart-btn { height: 38px; padding: 0 10px; }
+}
+.cart-count { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: var(--danger); color: var(--white); display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
+
+.compare-hint-popover {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    padding: 14px;
+    z-index: 1100;
+    text-align: center;
+}
+.compare-hint-popover::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: var(--white);
+}
+.compare-hint-popover p { color: #333; line-height: 1.4; }
+
+.account-item { position: relative; }
+.account-hover-preview {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 240px;
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    padding: 12px 14px;
+    z-index: 1100;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.account-item:hover .account-hover-preview { opacity: 1; visibility: visible; transform: translateY(0); }
+.account-hover-preview div { font-size: 13px; color: #333; margin-bottom: 4px; word-break: break-word; }
+.account-hover-preview div:last-child { margin-bottom: 0; }
+.account-hover-preview i { color: var(--secondary); margin-right: 6px; font-size: 13px; }
+
+.main-nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0; }
+.main-nav .nav-link { font-weight: 600; color: var(--dark); padding: 14px 10px !important; display: flex; align-items: center; gap: 6px; }
+.main-nav .nav-link i { color: var(--secondary); }
+.main-nav .nav-link:hover { color: var(--secondary); background: #fdfdfd; }
+
+/*--- DANH MỤC FLYOUT (nút giữa logo và ô tìm kiếm) ---*/
+.category-nav { position: relative; height: 100%; }
+.category-nav-btn {
+    width: 100%;
+    height: 46px;
+    background: var(--dark);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.category-nav-btn:hover { background: #000; }
+.category-nav-btn i:first-child { color: var(--primary); font-size: 16px; }
+.category-nav-btn .bi-chevron-down { margin-left: auto; font-size: 11px; opacity: .8; }
+
+@media (min-width: 992px) {
+    .category-flyout {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        width: 680px;
+        max-width: 82vw;
+        background: var(--white);
+        border-radius: 14px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.15);
+        display: flex;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(12px);
+        transition: var(--transition);
+        z-index: 1050;
+        overflow: hidden;
+    }
+    .category-nav:hover .category-flyout,
+    .category-flyout.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .category-flyout { display: none; }
+}
+
+.category-flyout-sidebar {
+    list-style: none;
+    margin: 0;
+    padding: 10px 0;
+    width: 230px;
+    flex-shrink: 0;
+    background: #f8f9fa;
+    border-right: 1px solid var(--border);
+    max-height: 420px;
+    overflow-y: auto;
+}
+.category-flyout-sidebar li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: var(--transition);
+}
+.category-flyout-sidebar li a i { color: var(--secondary); font-size: 16px; width: 18px; text-align: center; }
+.category-flyout-sidebar li:hover a,
+.category-flyout-sidebar li.active a {
+    background: var(--white);
+    color: var(--secondary);
+    border-left-color: var(--primary);
+}
+
+.category-flyout-panel { flex: 1; padding: 22px; max-height: 420px; overflow-y: auto; }
+.flyout-panel-content { display: none; }
+.flyout-panel-content.active { display: block; }
+.flyout-icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 14px; }
+.flyout-icon-grid a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #444;
+    font-size: 12.5px;
+    text-align: center;
+    line-height: 1.3;
+    transition: var(--transition);
+}
+.flyout-icon-grid a:hover { color: var(--secondary); transform: translateY(-3px); }
+.flyout-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #fff8e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--primary-hover);
+}
+
+/*==================================================
+        FOOTER & BACK TO TOP UTILITIES
+==================================================*/
+.site-footer { background: #1a1a1a; color: #ccc; padding: 50px 0 0 0; font-size: 14px; }
+.site-footer .footer-col-title { color: var(--white); font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+/* Không đặt màu riêng thì Bootstrap tự set `a { color: #0d6efd }` (xanh dương
+   mặc định) đè lên màu #ccc kế thừa từ .site-footer - trên nền #1a1a1a chỉ
+   đạt ~3,86:1, thiếu chuẩn 4.5:1. Đặt lại đúng màu #ccc của phần chữ footer
+   xung quanh (~10,8:1, dư an toàn), hover vẫn đổi sang màu thương hiệu như cũ. */
+.footer-menu a { display: block; margin-bottom: 8px; color: #ccc; transition: var(--transition); }
+.footer-menu a:hover { color: var(--primary); padding-left: 3px; }
+.footer-social { display: flex; gap: 12px; }
+/* Icon vuông bo góc + màu thương hiệu thật của từng app (giống icon app thật
+   trên điện thoại) thay vì dùng chung 1 khối tròn màu tối cho cả 4 mạng -
+   nhìn xấu, không phân biệt được app nào là app nào. */
+.footer-social a {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    font-size: 18px;
+    transition: var(--transition);
+}
+.footer-social a:hover { transform: translateY(-3px); filter: brightness(1.08); }
+.footer-social-facebook { background: #1877F2; }
+.footer-social-youtube { background: #FF0000; }
+.footer-social-instagram { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
+/* Gian hàng trên sàn TMĐT khác (Shopee/Lazada/TikTok Shop) - badge dạng viên
+   thuốc (pill) kèm tên sàn, khác icon vuông thuần .footer-social ở trên vì
+   đây cần đọc được TÊN sàn (không có icon logo Shopee/Lazada sẵn trong bộ
+   Bootstrap Icons đang dùng, dùng icon túi/cửa hàng chung + tên + màu
+   thương hiệu để vẫn nhận diện được ngay). */
+.marketplace-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.marketplace-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s, filter 0.2s;
+}
+.marketplace-badge:hover { transform: translateY(-3px); filter: brightness(1.08); color: var(--white); }
+/* #EE4D2D (đúng màu thương hiệu Shopee) với chữ trắng chỉ ~3,66:1, thiếu
+   chuẩn 4.5:1 - hạ độ sáng nhẹ (#C83C1E, cùng tông cam-đỏ, vẫn nhận ra ngay
+   là Shopee) để đạt ~5,1:1. */
+.marketplace-shopee { background: #C83C1E; }
+.marketplace-lazada { background: #0F146D; }
+.marketplace-tiktok-shop { background: #010101; }
+.footer-bottom { background: #111; text-align: center; padding: 20px 0; margin-top: 40px; font-size: 13px; border-top: 1px solid #222; }
+/* Nằm dưới danh sách "Hỗ trợ" (cột trái căn lề, không phải thanh footer-bottom
+   toàn chiều rộng như trước) - căn trái, không center, để đồng nhất với các
+   link phía trên nó. */
+.footer-stats { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13px; color: #999; }
+.footer-stats i { margin-right: 4px; }
+/* Logo footer = ĐÚNG file logo admin đang dùng ở header (uploads/theme/
+   1785831211820-839652927.webp, do user cung cấp lại qua logofooter.webp) -
+   xử lý bằng sharp: nền trắng -> trong suốt, chữ nâu -> vàng đặc
+   (var(--primary)), giữ NGUYÊN 100% hình dạng/font/tỉ lệ gốc, chỉ đổi màu,
+   và cắt sát bỏ khoảng trắng thừa quanh chữ (ảnh gốc có rất nhiều lề trắng).
+   Cao 37px để CHỮ hiển thị đúng kích cỡ thật như ở header (ảnh header không
+   cắt lề nên hiển thị ở max-width 190px cũng chỉ tương đương ~35px chữ thật -
+   nếu để ảnh đã cắt sát này cùng 46px sẽ trông to hơn hẳn header). */
+.footer-logo-text {
+    display: inline-flex;
+    text-decoration: none;
+}
+.footer-logo-text:hover { opacity: .88; }
+.footer-logo-img {
+    height: 37px;
+    width: auto;
+}
+.compliance-badge { margin-top: 14px; }
+.compliance-badge img { max-height: 50px; }
+.compliance-badge-placeholder {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px dashed #555; border-radius: 6px; padding: 6px 10px;
+    font-size: 11.5px; color: #999;
+}
+
+#backToTop {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 45px;
+    height: 45px;
+    background: var(--primary);
+    color: var(--dark);
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#backToTop.show { opacity: 1; visibility: visible; }
+#backToTop:hover { background: var(--primary-hover); transform: translateY(-3px); }
+
+/*==================================================
+        COMPARE BAR
+==================================================*/
+.compare-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1050;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+}
+
+/*==================================================
+        BRAND BADGES (Thương Hiệu Nổi Bật)
+==================================================*/
+.brand-badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+.brand-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 64px;
+    border-radius: 10px;
+    border: 1px solid #e5e5e5;
+    background: var(--white);
+    transition: var(--transition);
+    text-decoration: none;
+}
+.brand-badge:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+.brand-badge-logo img {
+    max-width: 80%;
+    max-height: 34px;
+    object-fit: contain;
+}
+.brand-badge-word {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0 10px;
+    border-width: 1.5px;
+}
+
+/*==================================================
+        FLOATING CONTACT BUTTON (ZALO / HOTLINE)
+==================================================*/
+/* ChatWidget.jsx (nút chatbot tròn) - trước đây đặt position/right/bottom
+   bằng inline style cố định, KHÔNG đổi theo breakpoint như .contact-fab bên
+   dưới (right: 30px -> 14px ở màn hẹp) - khiến 2 nút lệch nhau theo chiều
+   ngang trên điện thoại (nút này vẫn cách mép 30px trong khi .contact-fab đã
+   dịch vào 14px). Chuyển sang class CSS để giữ ĐÚNG 2 giá trị `right` luôn
+   khớp nhau ở mọi breakpoint - sửa 1 trong 2 số bên dưới thì nhớ sửa số còn
+   lại theo cho khớp (không có cách nào ép dùng chung 1 biến CSS ở đây vì
+   .contact-fab-toggle còn tự đổi cỡ 56px->50px kèm theo, phức tạp hơn 1 biến
+   đơn thuần). */
+.chatbot-widget {
+    position: fixed;
+    bottom: 170px;
+    right: 30px;
+    z-index: 1000;
+}
+
+@media (max-width: 576px) {
+    .chatbot-widget { right: 14px; }
+}
+
+.contact-fab {
+    position: fixed;
+    /* Luôn cách đúng 1cm phía TRÊN nút chatbot (ChatWidget.jsx: bottom 170px,
+       cao 56px, cùng right 30px, giờ là .chatbot-widget ở trên) - đổi vị
+       trí/kích cỡ chatbot thì phải sửa lại công thức này theo cho khớp. */
+    bottom: calc(170px + 56px + 1cm);
+    right: 30px;
+    z-index: 1000;
+    /* Chỉ để nút tròn tham gia kích thước của phần tử cố định. Menu ẩn được
+       đặt absolute bên dưới để không tạo một vùng trong suốt 200x160px chặn
+       các nút/liên kết của trang trên màn hình cảm ứng. */
+    display: block;
+}
+
+.contact-fab-toggle {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #FF7A45 0%, #FF3D71 100%);
+    color: var(--white);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(255,61,113,0.35);
+    transition: var(--transition);
+}
+.contact-fab-toggle:hover { background: linear-gradient(135deg, #FF3D71 0%, #FF7A45 100%); }
+
+/* Vòng nhấp nháy tách thành pseudo-element riêng animate opacity (không phải
+   box-shadow trực tiếp trên .contact-fab-toggle) - nút này nổi cố định trên
+   MỌI trang, animate box-shadow vô hạn trực tiếp trên nó buộc repaint liên
+   tục suốt phiên duyệt, càng nặng thêm cho input lag trên di động. */
+.contact-fab-toggle::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 0 14px rgba(255,61,113,0.35);
+    opacity: 0;
+    pointer-events: none;
+    animation: contactFabPulse 2.2s infinite;
+    will-change: opacity;
+}
+.contact-fab.open .contact-fab-toggle::before { animation: none; }
+
+.contact-fab-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 12px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: var(--transition);
+}
+.contact-fab.open .contact-fab-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.contact-fab-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--white);
+    border-radius: 50px;
+    padding: 6px 18px 6px 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    text-decoration: none;
+    color: var(--dark);
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.contact-fab-item:hover { transform: translateX(-4px); color: var(--dark); }
+
+.contact-fab-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.contact-fab-item.zalo .contact-fab-icon { background: #0068FF; font-size: 13px; font-weight: 800; }
+.contact-fab-item.phone .contact-fab-icon { background: #28a745; }
+
+@keyframes contactFabPulse {
+    0%, 100% { opacity: 0; }
+    50% { opacity: .6; }
+}
+
+/*==================================================
+        LIVE BANNER (client/src/components/LiveBanner.jsx)
+==================================================*/
+.live-banner {
+    background: #dc3545;
+    color: var(--white);
+    font-size: 14px;
+    position: relative;
+}
+.live-banner-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--white);
+    flex-shrink: 0;
+    animation: liveBannerPulse 1.4s infinite;
+}
+@keyframes liveBannerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+}
+.live-banner-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    opacity: .8;
+    font-size: 13px;
+    line-height: 1;
+    padding: 4px;
+}
+.live-banner-close:hover { opacity: 1; }
+
+@media (max-width: 576px) {
+    .contact-fab { right: 14px; }
+    .contact-fab-toggle { width: 50px; height: 50px; font-size: 20px; }
+    #backToTop { right: 14px; bottom: 22px; }
+}
+
+/*==================================================
+        SEARCH AUTOCOMPLETE SUGGESTIONS
+==================================================*/
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    max-height: 360px;
+    overflow-y: auto;
+    z-index: 1050;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background: var(--gray); }
+.suggestion-img { width: 42px; height: 42px; object-fit: contain; border: 1px solid var(--border); border-radius: 6px; flex-shrink: 0; }
+.suggestion-title { font-size: 13px; font-weight: 600; margin: 0; }
+.suggestion-price { font-size: 13px; color: var(--danger); font-weight: bold; }
+
+/*==================================================
+        TOAST THÔNG BÁO (thay thế alert())
+==================================================*/
+#toast-container {
+    position: fixed;
+    top: 90px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.app-toast {
+    background: var(--white);
+    border-left: 4px solid var(--secondary);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 14px 18px;
+    min-width: 280px;
+    max-width: 340px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    transform: translateX(120%);
+    transition: transform .35s ease;
+}
+
+.app-toast.show { transform: translateX(0); }
+.app-toast.success { border-left-color: #198754; }
+.app-toast i { font-size: 20px; color: #198754; }
+
+/*==================================================
+        BANNER DỌC CẠNH DANH MỤC (trang chủ)
+==================================================*/
+.cat-banner-row {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+}
+.cat-banner-row.banner-right { flex-direction: row-reverse; }
+.cat-banner-row .cat-banner-main { flex: 1; min-width: 0; }
+
+.cat-vbanner {
+    width: 220px;
+    flex-shrink: 0;
+    border-radius: 16px;
+    padding: 22px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+}
+.cat-vbanner.theme-amber { background: linear-gradient(165deg, #4E3400 0%, #97650A 48%, var(--primary) 100%); }
+.cat-vbanner.theme-dark { background: linear-gradient(165deg, #14161F 0%, #2A2E40 55%, #5B4420 100%); }
+
+.cat-vbanner .vbanner-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(255,255,255,.78);
+}
+.cat-vbanner .vbanner-title {
+    font-weight: 800;
+    font-size: 21px;
+    line-height: 1.18;
+    color: var(--white);
+    margin: 8px 0 0;
+}
+.cat-vbanner .vbanner-img {
+    margin: 14px auto;
+    max-width: 88%;
+    max-height: 140px;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 16px rgba(0,0,0,.35));
+}
+.cat-vbanner .vbanner-price { margin-top: auto; }
+.cat-vbanner .vbanner-price .num { font-weight: 800; font-size: 25px; color: var(--white); }
+.cat-vbanner .vbanner-perk {
+    font-size: 11px;
+    color: rgba(255,255,255,.85);
+    margin-top: 10px;
+    line-height: 1.55;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,.22);
+}
+.cat-vbanner .vbanner-cta {
+    margin-top: 14px;
+    background: var(--white);
+    color: var(--dark);
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    font-weight: 800;
+    font-size: 12.5px;
+    cursor: pointer;
+    text-align: center;
+    display: block;
+}
+.cat-vbanner:hover .vbanner-cta { background: var(--gray); }
+
+@media (max-width: 767.98px) {
+    .cat-banner-row, .cat-banner-row.banner-right { flex-direction: column; }
+    .cat-vbanner {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+    }
+    .cat-vbanner .vbanner-eyebrow { display: none; }
+    .cat-vbanner .vbanner-title { font-size: 16px; flex: 1; margin: 0; }
+    .cat-vbanner .vbanner-img { margin: 0; max-height: 60px; max-width: 68px; order: 3; }
+    .cat-vbanner .vbanner-price { margin-top: 0; order: 4; text-align: right; }
+    .cat-vbanner .vbanner-price .num { font-size: 18px; }
+    .cat-vbanner .vbanner-perk { display: none; }
+    .cat-vbanner .vbanner-cta { margin-top: 0; order: 5; width: auto; padding: 9px 14px; white-space: nowrap; }
+}
+
+/*==================================================
+        NỀN TRANG TRÍ TOÀN TRANG (áp dụng mọi trang công khai)
+==================================================*/
+.site-bg-wrap {
+    position: relative;
+    /* overflow: clip (KHÔNG phải hidden) - vẫn cắt gọn 2 khối mờ trang trí
+       tràn ra ngoài như cũ, NHƯNG clip không tạo "scroll container" nên
+       KHÔNG vô hiệu hoá position:sticky của phần tử con (hidden thì có).
+       Nhờ vậy khối "Tóm tắt đơn hàng" ở trang giỏ hàng bám dính được bằng
+       CSS thuần, bỏ được đoạn JS scroll-listener + position:fixed cũ. */
+    overflow: clip;
+    /* Mốc chuyển màu tính theo px cố định (không phải %) - trước đây tính %
+       theo TOÀN BỘ chiều cao trang (dài ngắn tuỳ số sản phẩm), nên trang càng
+       dài thì càng lâu mới chuyển hết sang FFFAEE, để lộ màu FFF3D2 đậm kéo
+       dài ngay dưới banner (đặc biệt rõ từ khi banner rút còn 260px, không
+       còn khối đệm "Cam kết dịch vụ" ở giữa) - lệch hẳn so với FFFBF0 mà mọi
+       khối .bg-white/.bg-light khác đang dùng (xem @layer site-bg-override
+       bên dưới), tạo đường ranh màu rõ ngay sau banner. Chốt cứng theo px để
+       luôn chuyển xong trong 1 khoảng ngắn, cố định từ đầu trang, bất kể
+       trang dài bao nhiêu. */
+    background: linear-gradient(180deg, #FFF3D2 0px, #FFFAEE 450px, var(--gray) 1600px);
+    /* Đảm bảo nền luôn phủ đủ chiều cao màn hình và footer luôn nằm sát đáy,
+       kể cả ở trang có ít nội dung (vd danh mục lọc ra 0 kết quả) - tránh lộ
+       khoảng trắng trơn của trình duyệt bên dưới footer. */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.site-bg-wrap main {
+    flex: 1;
+}
+
+/* Admin đã upload ảnh nền riêng (Admin > Cài đặt > Ảnh nền toàn trang) - ảnh
+   thay thế gradient mặc định, phủ kín và cố định khi cuộn cho cảm giác chiều
+   sâu (giống hiệu ứng parallax nhẹ). */
+.site-bg-wrap.has-bg-image {
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.site-bg-wrap::before,
+.site-bg-wrap::after {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+}
+
+.site-bg-wrap::before {
+    width: 620px;
+    height: 620px;
+    top: -260px;
+    right: -180px;
+    background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+    opacity: .40;
+}
+
+.site-bg-wrap::after {
+    width: 520px;
+    height: 520px;
+    bottom: -220px;
+    left: -160px;
+    background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+    opacity: .16;
+}
+
+/* Có ảnh nền riêng thì ẩn 2 khối mờ trang trí mặc định - tránh chồng màu lên
+   ảnh admin đã chọn. */
+.site-bg-wrap.has-bg-image::before,
+.site-bg-wrap.has-bg-image::after {
+    display: none;
+}
+
+/* Chỉ định vị lại Header/main/Footer (nội dung chính) để nổi trên 2 khối mờ
+   trang trí - CỐ Ý không dùng ">*" chọn mọi phần tử con, vì nút liên hệ
+   nhanh/lên đầu trang (position: fixed) cũng là con trực tiếp của
+   .site-bg-wrap; ghi đè position của chúng sẽ khiến chúng rơi vào luồng
+   bố cục bình thường thay vì nổi cố định, tạo khoảng trắng thừa dưới footer. */
+.site-bg-wrap > header,
+.site-bg-wrap > main,
+.site-bg-wrap > footer {
+    position: relative;
+    z-index: 1;
+}
+
+/* Đồng nhất 1 màu duy nhất cho mọi khối nội dung trên toàn trang (không
+   phân biệt bg-white/bg-light xen kẽ như mặc định Bootstrap) - tránh cảm
+   giác loang lổ nhiều tông giữa các section/danh mục.
+   Đặt trong @layer: theo chuẩn CSS Cascade Layers, 1 khai báo !important nằm
+   trong @layer LUÔN thắng 1 khai báo !important KHÔNG nằm trong layer nào -
+   bất kể độ đặc trưng (specificity) - trong khi tiện ích .bg-white/.bg-light
+   của Bootstrap không nằm trong layer nào. Cách này chắc chắn hơn việc đua
+   độ đặc trưng (từng thử .site-bg-wrap.has-bg-image .bg-white 3 lớp class
+   nhưng không thắng nổi .bg-white gốc của Bootstrap trong lúc kiểm thử). */
+@layer site-bg-override {
+    .site-bg-wrap .bg-white,
+    .site-bg-wrap .bg-light {
+        background-color: #FFFBF0 !important;
+    }
+
+    /* Có ảnh nền riêng: phần diện tích section KHÔNG bị .category-section-box/
+       .product-card (các khối thẻ riêng, vẫn giữ nền đặc ở trên) che - tức
+       khoảng đệm quanh/giữa các thẻ - phải hiện ảnh SẮC NÉT 100%, giống hệt
+       banner chính, không phải mờ (rgba thấp - lần thử trước) và cũng không
+       phải đặc (che mất ảnh hoàn toàn - lần thử trước nữa). Trong suốt hoàn
+       toàn (transparent), không phải rgba mờ. */
+    .site-bg-wrap.has-bg-image :is(section, main).bg-white,
+    .site-bg-wrap.has-bg-image :is(section, main).bg-light {
+        background-color: transparent !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .site-bg-wrap::before { width: 380px; height: 380px; top: -160px; right: -140px; }
+    .site-bg-wrap::after { width: 320px; height: 320px; bottom: -140px; left: -120px; }
+}
+
+/* background-attachment: fixed render lỗi (vỡ/méo hình) trên Safari iOS -
+   cả iPhone lẫn iPad, không riêng màn hình nhỏ - đặc biệt khi kết hợp với
+   overflow:hidden như .site-bg-wrap đang có. Dùng (hover:none)+(pointer:coarse)
+   để nhận diện đúng nhóm thiết bị cảm ứng (điện thoại + tablet) thay vì đoán
+   theo độ rộng màn hình, vì iPad có thể rộng hơn cả một số laptop. */
+@media (max-width: 767.98px), (hover: none) and (pointer: coarse) {
+    .site-bg-wrap.has-bg-image { background-attachment: scroll; }
+}
+
+/* Khối nền bọc quanh lưới sản phẩm của từng section danh mục ở trang chủ -
+   dùng chung tông màu/gradient với .flash-sale-body để sản phẩm luôn có 1
+   khối nền ấm bên dưới thay vì nằm trần trực tiếp trên nền section. */
+.category-section-box {
+    padding: 24px 20px 28px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #FFF3E2 0%, #FFF8ED 100%);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .05);
+}
+
+/* Nút "Xem tất cả" dùng .btn-sm mặc định của Bootstrap chỉ cao ~31px -
+   PageSpeed Insights báo "đích chạm có kích thước chưa phù hợp". Thêm
+   padding dọc, giữ nguyên cỡ chữ nhỏ/dáng viên thuốc (không đổi sang .btn
+   cỡ thường - to hơn hẳn, lệch tỉ lệ khi đứng cạnh tiêu đề). Phải viết
+   ".btn.btn-view-all" (2 class, specificity cao hơn) - style.css nạp TRƯỚC
+   bootstrap.min.css (xem root.jsx) nên ".btn-sm" của Bootstrap (1 class,
+   cùng specificity) nạp sau và thắng nếu chỉ viết ".btn-view-all" suông. */
+.btn.btn-view-all { padding-top: 10px; padding-bottom: 10px; }
+
+/* Banner chính trang chủ (carousel + banner phụ) - ảnh cần tràn sát viền
+   khung, không có khoảng đệm như khối lưới sản phẩm. overflow:hidden để ảnh
+   tự bo theo góc bo tròn của khung thay vì lộ góc vuông ra ngoài. Bỏ hẳn nền
+   gradient kế thừa từ .category-section-box - 3 banner (chính + 2 phụ) đã
+   tự bo góc/overflow hidden riêng từng cái, phần nền ở đây chỉ lộ ra ở khe hở
+   rất mỏng (gutter row) giữa chúng, tạo mảng màu thừa không cần thiết. */
+.category-section-box-flush {
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+    box-shadow: none;
+}
+
+/*==================================================
+        FLASH SALE - theo đúng khung thiết kế đỏ-vàng "folder tab": hàng
+        tab bo góc trên nổi lên trước, khối đỏ-vàng bên dưới chứa đồng hồ
+        đếm ngược + lưới sản phẩm. Card sản phẩm dùng LẠI đúng .product-card
+        dùng chung toàn trang (không phải thẻ riêng) - viết mới lần này CHỦ
+        ĐÍCH tránh mọi hiệu ứng tốn GPU (filter: blur, box-shadow động, cuộn
+        ngang snap...) từng bị nghi là nguyên nhân đơ tay chạm trên điện
+        thoại ở bản cũ, dù đã vá 2-3 lần vẫn chưa dứt điểm - đơn giản hoá
+        thẳng từ CSS thay vì tiếp tục vá thêm.
+==================================================*/
+/* margin-top chừa đúng chỗ cho .flash-sale-tabs nhô lên trên (position:
+   absolute, top âm) - .flash-sale section chỉ có padding mặc định rất mỏng
+   (py-2, 8px) nên nếu không có margin-top riêng ở đây, hàng tab sẽ nhô lên
+   ĐÈ LÊN section ngay phía trên (banner chính) thay vì chỉ nhô lên trên
+   .flash-sale-panel như ý muốn. 34px = 30px hàng tab nhô lên (xem
+   .flash-sale-tabs) + ~4px đệm an toàn. */
+.flash-sale-panel {
+    position: relative;
+    margin-top: 34px;
+    border-radius: 20px;
+    padding: 34px 20px 20px;
+    background: linear-gradient(160deg, #E8272F 0%, #C1121F 55%, #8f0d16 100%);
+    border: 2px solid #FFD54A;
+}
+
+.flash-sale-percent-badge {
+    position: absolute;
+    top: -18px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #FFD54A 0%, #FFA726 100%);
+    color: #8f0d16;
+    font-size: 20px;
+    font-weight: 800;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .25);
+}
+
+/* Hàng tab kiểu "folder" - tab đang chọn nhô cao hơn + màu sáng, các tab
+   còn lại thấp hơn + màu tối, đúng dáng nhãn hồ sơ chồng lên khối bên dưới.
+   LUÔN 1 hàng ngang duy nhất (flex-wrap: nowrap) - co nhỏ dần theo màn hình
+   qua clamp() ở .flash-sale-tab, còn nếu vẫn không đủ chỗ (nhiều tab/tên
+   dài) thì tự cuộn ngang (overflow-x) thay vì xuống hàng, tránh xuống 2 hàng
+   làm vỡ layout trên điện thoại. */
+.flash-sale-tabs {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.flash-sale-tabs::-webkit-scrollbar { display: none; }
+
+.flash-sale-tab {
+    flex-shrink: 0;
+    border: 2px solid #FFD54A;
+    border-bottom: none;
+    background: #8f0d16;
+    color: rgba(255, 255, 255, .85);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: clamp(11px, 1.6vw, 15px);
+    letter-spacing: .3px;
+    white-space: nowrap;
+    padding: 10px 16px 8px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    transition: background-color .15s, color .15s;
+}
+
+/* Icon trạng thái nhỏ trên tab (sắp diễn ra/đã kết thúc) - cỡ chữ nhỏ hơn
+   hẳn tên tab, không đẩy độ rộng tab lên đáng kể như chữ "(Sắp diễn ra)"
+   trước đây (xem PromoZonesSection.jsx). */
+.flash-sale-tab-status {
+    font-size: .7em;
+    margin-left: 4px;
+    vertical-align: 1px;
+    opacity: .85;
+}
+
+.flash-sale-tab.active {
+    /* #E8272F trước đây chỉ đạt ~4,37:1 với chữ trắng - dưới mức 4.5:1 cần
+       cho chữ thường. Đổi sang #C1121F (đã dùng trong gradient panel bên
+       dưới, cùng tông) - đạt ~6,1:1. */
+    background: #C1121F;
+    color: var(--white);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, .18);
+    position: relative;
+    z-index: 1;
+}
+
+/* Đếm ngược chung của tab đang chọn, dạng ô số tối màu. */
+.promo-zone-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 22px;
+    background: rgba(0, 0, 0, .28);
+    border-radius: 999px;
+}
+
+.promo-zone-countdown-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.promo-zone-countdown-digits {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.promo-zone-countdown-box {
+    background: #1a1a1a;
+    color: var(--white);
+    font-weight: 800;
+    font-size: 20px;
+    line-height: 1;
+    min-width: 32px;
+    padding: 8px 6px;
+    border-radius: 6px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-shadow: inset 0 -2px 0 rgba(255, 255, 255, .08);
+}
+
+.promo-zone-countdown-sep {
+    color: var(--white);
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.flash-sale-toprow {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 18px;
+}
+
+.flash-sale-body {
+    /* Lưới sản phẩm dùng HorizontalProductCarousel dùng chung toàn trang (xem
+       .product-carousel* bên dưới) - không cần CSS riêng gì thêm ở đây. */
+}
+
+/*==================================================
+        LƯỚI SẢN PHẨM VUỐT/CUỘN NGANG - dùng chung cho mọi khu vực có nhiều
+        sản phẩm trên trang chủ (từng danh mục, Hàng Mới Về, Flash Sale),
+        thay cho kiểu "Xem Thêm" xổ dọc xuống trước đây. Chỉ overflow-x cuộn
+        thường + mũi tên - KHÔNG dùng filter/blur, box-shadow animate hay
+        will-change layer (những hiệu ứng từng bị nghi gây đơ tay chạm trên
+        điện thoại ở bản carousel cũ, xem HorizontalProductCarousel.jsx).
+==================================================*/
+.product-carousel {
+    position: relative;
+}
+
+.product-carousel-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--carousel-cols-mobile) - 1) * 1rem) / var(--carousel-cols-mobile));
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Chừa chỗ DƯỚI thẻ sản phẩm cho tooltip "So sánh sản phẩm" (mở xuống
+       dưới nút, xem [data-tooltip]::after) không bị cắt mất - overflow-x:
+       auto tự động buộc overflow-y cũng thành auto (quy tắc CSS: 1 trục
+       không phải visible thì trục kia không còn visible nữa), nên nội dung
+       tràn ra dưới border-box của track (dù vẫn nằm trong khoảng đệm này)
+       sẽ không bị cắt như khi tràn hẳn ra ngoài. */
+    padding-bottom: 26px;
+}
+.product-carousel-track::-webkit-scrollbar { display: none; }
+.product-carousel-item { scroll-snap-align: start; min-width: 0; }
+
+@media (min-width: 768px) {
+    .product-carousel-track { grid-auto-columns: calc((100% - (var(--carousel-cols-tablet) - 1) * 1rem) / var(--carousel-cols-tablet)); }
+}
+@media (min-width: 992px) {
+    .product-carousel-track { grid-auto-columns: calc((100% - (var(--carousel-cols-desktop) - 1) * 1rem) / var(--carousel-cols-desktop)); }
+}
+
+.product-carousel-arrow {
+    position: absolute;
+    top: calc(50% - 13px); /* trừ nửa chiều cao phần đệm dưới (padding-bottom: 26px) để mũi tên vẫn canh giữa đúng PHẦN ẢNH/THẺ, không lệch xuống theo phần đệm */
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .95);
+    color: var(--dark);
+    font-size: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.product-carousel-arrow:hover { background: var(--white); }
+.product-carousel-arrow-left { left: -14px; }
+.product-carousel-arrow-right { right: -14px; }
+
+@media (max-width: 575.98px) {
+    .product-carousel-arrow { width: 30px; height: 30px; font-size: 14px; }
+    .product-carousel-arrow-left { left: -8px; }
+    .product-carousel-arrow-right { right: -8px; }
+}
+
+@media (max-width: 767.98px) {
+    /* Tab nhỏ lại (padding/font giảm) nên nhô lên ít hơn - giảm margin-top
+       theo đúng tỉ lệ, tránh vừa thừa khoảng trắng vừa vẫn có nguy cơ đè lên
+       section trên nếu để nguyên số của desktop. */
+    .flash-sale-panel { margin-top: 28px; border-radius: 14px; padding: 28px 14px 16px; }
+    .flash-sale-tabs { top: -24px; gap: 2px; }
+    /* Font 10px cố định (nhỏ hơn mức sàn 11px của clamp() ở desktop) + hẹp
+       padding trái/phải + bỏ letter-spacing - đo thực tế trên production: 3
+       tab kiểu "Cuối tuần vui vẻ" tràn ~38px ngoài khung nhìn thấy ở màn
+       hình 375px dù font đã ở mức sàn clamp(), tab cuối bị cắt mất 1 phần
+       (phải tự cuộn ngang mới thấy hết chữ, trông như bị "mất chữ" nếu
+       không biết cuộn). Đã thử nghiệm trực tiếp nhiều mức trước khi chốt tổ
+       hợp này - vừa đủ để 3 tab hiện tại vừa khít KHÔNG cần cuộn (chênh 0px
+       giữa scrollWidth/clientWidth lúc đo), không ép padding xuống quá thấp
+       ảnh hưởng vùng bấm. Vẫn giữ overflow-x làm lưới an toàn (xem
+       .flash-sale-tabs) cho tên khu vực dài hơn admin đặt sau này. */
+    .flash-sale-tab { padding: 8px 6px 6px; letter-spacing: 0; font-size: 10px; }
+    .promo-zone-countdown { gap: 8px; padding: 8px 16px; }
+    .promo-zone-countdown-box { font-size: 16px; min-width: 26px; padding: 6px 4px; }
+    .flash-sale-skeleton { min-height: 500px; }
+}
+
+/* Giữ chỗ đúng khoảng chiều cao thật (đo trực tiếp trên production) trong
+   lúc PromoZonesSection đang tải API - xem PromoZonesSection.jsx. Không cần
+   khớp tuyệt đối, chỉ cần đủ gần để tránh khối lớn "nhảy" vào đẩy nội dung
+   phía dưới xuống đột ngột. */
+.flash-sale-skeleton {
+    min-height: 600px;
+}
+
+/* Container query (không phải media query) vì lưới sản phẩm đổi số cột ở
+   nhiều breakpoint (row-cols-md-3, row-cols-lg-4...), nên độ rộng thẻ
+   không tỉ lệ thuận với độ rộng màn hình - phải dựa vào độ rộng thẻ thật. */
+.product-info-cq {
+    container-type: inline-size;
+}
+.product-info-cq .btn-label {
+    display: none;
+}
+@container (min-width: 215px) {
+    .product-info-cq .btn-label {
+        display: inline;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .contact-fab-toggle::before {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/*==================================================
+        TRANG CHỦ - SLIDER CHÍNH + 2 BANNER PHỤ
+        Nằm gọn trong .container (bằng chiều ngang trang), KHÔNG tràn viền -
+        slider chính bên trái, 2 banner phụ (admin tự cấu hình) xếp dọc bên
+        phải, cùng cao bằng nhau nhờ Bootstrap row tự giãn đều chiều cao cột.
+==================================================*/
+.hero-slider .hero-main-carousel {
+    border-radius: 16px;
+    overflow: hidden;
+}
+/* TỪNG chốt cứng height theo từng breakpoint (260/165/120px) trong khi ảnh
+   admin upload lại luôn CÙNG 1 bản duy nhất (không đổi theo thiết bị) - hậu
+   quả thật: tỉ lệ khung hiển thị đổi hẳn theo màn hình (~4,3:1 desktop còn
+   ~2,9:1 mobile do chiều rộng co lại nhưng chiều cao giữ nguyên tỉ lệ khác),
+   trong khi công cụ cắt ảnh lúc admin upload (ImageCropModal.jsx) chỉ cắt
+   theo ĐÚNG 1 tỉ lệ cố định - lệch tỉ lệ khiến object-fit:cover phải cắt bớt
+   2 bên NHIỀU hơn dự kiến trên mobile, dễ cắt mất chữ/logo nằm gần mép ảnh
+   dù ảnh gốc không hề bị lỗi gì. Đổi sang aspect-ratio - GIỮ NGUYÊN đúng 1
+   tỉ lệ ở MỌI kích thước màn hình (khớp đúng tỉ lệ cắt ảnh 4,6:1 lúc upload,
+   xem AdminSettingsContent.jsx), không cần chốt riêng theo từng breakpoint
+   nữa - đây cũng chính là cách các sàn TMĐT lớn (Shopee...) giữ banner hiện
+   giống hệt nhau trên mọi thiết bị, không riêng gì việc cắt đúng lúc upload. */
+.hero-slider .hero-main-carousel .carousel-inner,
+.hero-slider .hero-main-carousel .carousel-item {
+    aspect-ratio: 4.6;
+}
+.hero-slider .hero-main-carousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-side-banner-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* ĐÃ THỬ height:100% (định bụng dựa vào .row's align-items:stretch mặc
+       định để tự khớp chiều cao carousel bên cạnh) - đo lại thực tế thì
+       KHÔNG đúng: flexbox tính "hypothetical height" của cột này (để quyết
+       định 2 cột stretch bằng bao nhiêu) dựa trên nội dung bên trong TRƯỚC
+       khi biết carousel cao bao nhiêu, mà nội dung bên trong (2 ảnh
+       .hero-side-banner cũng height:100%) lại không có gì để bám vào - đúng
+       y hệt vấn đề "hypothetical height" đã ghi chú (và né bằng cách chốt
+       cứng 260px) trước khi đổi carousel sang aspect-ratio. Sửa đúng cách:
+       cho CHÍNH cột này 1 aspect-ratio riêng thay vì phụ thuộc cột bên cạnh -
+       4,6 (tỉ lệ carousel) chia đúng tỉ lệ chiều rộng thật giữa col-lg-8 và
+       col-lg-4 (đo thực tế bằng DevTools, không phải suy diễn 2:1 lý
+       thuyết vì .row.g-2 có gutter riêng) ra đúng chiều cao khớp carousel,
+       không cần biết carousel cao bao nhiêu nữa - hết phụ thuộc vòng. */
+    aspect-ratio: 2.28;
+}
+
+.hero-side-banner {
+    position: relative;
+    display: block;
+    flex: 1;
+    min-height: 0;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.hero-side-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: var(--transition);
+}
+.hero-side-banner:hover img { transform: scale(1.05); }
+
+.hero-side-banner-caption {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 14px 16px;
+    background: linear-gradient(0deg, rgba(0,0,0,.68) 0%, transparent 100%);
+}
+.hero-side-banner-caption span {
+    color: var(--white);
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+@media (max-width: 991.98px) {
+    /* Dưới lg, carousel + 2 banner phụ không còn đứng CHUNG 1 hàng nữa (xếp
+       dọc xuống dưới, xem Home.jsx's col-lg-8/col-lg-4) - .hero-side-banner-col
+       height:100% (thừa hưởng từ .row stretch) không còn ý nghĩa gì ở đây,
+       quay lại chốt cứng riêng (85px) cho đúng dải 2 ảnh nhỏ nằm ngang, độc
+       lập hoàn toàn với chiều cao carousel phía trên. */
+    .hero-side-banner-col { flex-direction: row; height: 85px; margin-top: 12px; }
+}
+
+@media (max-width: 575.98px) {
+    .hero-side-banner-col { height: 60px; }
+    .hero-side-banner-caption { padding: 10px 12px; }
+    .hero-side-banner-caption span { font-size: 12px; }
+}
+
+/* Sidebar admin - ở màn hình >= lg đứng yên khi cuộn trang, không trôi mất
+   khỏi màn hình. Dùng position:fixed (không phải sticky) - sidebar là flex
+   item trong .admin-sidebar-layout (xem AdminLayout.jsx), mà sticky bên
+   trong flex item rất dễ vỡ tuỳ chiều cao các phần tử anh em (đã xác nhận
+   không hoạt động đúng như mong muốn) - fixed định vị thẳng theo viewport,
+   không phụ thuộc layout xung quanh nữa nên chắc chắn luôn đúng. Vì fixed
+   lấy sidebar ra khỏi luồng bình thường, phải bù lại margin-left cho
+   .admin-content để nội dung không bị đè lên (xem media query bên dưới).
+   Dưới breakpoint lg, chuyển sang dạng trượt ra (off-canvas): ẩn ngoài màn
+   hình bằng translateX, AdminLayout.jsx thêm class .open + lớp phủ nền tối
+   khi bấm nút hamburger để mở, đóng lại khi bấm ra ngoài hoặc chọn 1 mục
+   menu (xem media query (max-width: 991.98px) ngay dưới). */
+@media (min-width: 992px) {
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 1030;
+    }
+    .admin-content {
+        margin-left: 240px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1060;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+    }
+    .admin-sidebar.open { transform: translateX(0); }
+    .admin-content { padding-top: 56px; }
+}
+
+/* Thanh "Lưu cài đặt" nổi cố định gần đáy màn hình khi cuộn trang cài đặt dài
+   (Cài đặt chung / Giao diện & Nội dung) - trước đây nút này nằm cuối form,
+   phải cuộn hết xuống mới bấm được. Dùng position:fixed (không phải sticky,
+   cùng lý do như .admin-sidebar ở trên - sticky trong flex/grid con của
+   Bootstrap .row/.col dễ vỡ) để LUÔN nổi đúng vị trí bất kể cuộn tới đâu.
+   Điện thoại/tablet (sidebar dạng off-canvas, không chiếm chỗ) cách đều 2
+   bên; từ lg trở lên chừa đúng 240px bên trái cho sidebar cố định. */
+.admin-save-bar {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1020;
+}
+@media (min-width: 992px) {
+    .admin-save-bar {
+        left: 264px;
+        right: 24px;
+        bottom: 24px;
+    }
+}
+
+/* Nút chọn icon danh mục (Admin > Danh mục sản phẩm) - xem IconPicker trong
+   AdminCategories.jsx. Popover định vị tuyệt đối so với chính nút bấm
+   (position: relative trên .icon-picker), không phải so với cả trang. */
+.icon-picker { position: relative; display: inline-block; }
+.icon-picker-toggle {
+    width: 31px;
+    height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 15px;
+    color: #333;
+}
+.icon-picker-toggle:hover { border-color: #ffc107; background: #fff8e6; }
+.icon-picker-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 30;
+    width: 260px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+.icon-picker-item {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: #f8f9fa;
+    font-size: 16px;
+    color: #333;
+}
+.icon-picker-item:hover { background: #fff3cd; }
+.icon-picker-item.active { border-color: #ffc107; background: #fff3cd; color: #b8860b; }
+
+/* ===== Gộp từ main.css (giảm số request CSS chặn hiển thị lúc tải trang -
+   PageSpeed Insights đo được mỗi request riêng tốn thêm ~200-400ms trên
+   mạng chậm dù file rất nhẹ, do độ trễ round-trip chứ không phải băng
+   thông) - nội dung giữ NGUYÊN, chỉ nối file, không đổi gì bên trong. */
+/*==================================================
+        DIEN MAY NK - MAIN CONTENT STYLES
+==================================================*/
+
+.hero-slider {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* display:none/.active{display:block} KHÔNG được ghi đè ở đây nữa - Bootstrap
+   tự xử lý display cho cả .active LẪN .carousel-item-next/-prev (2 slide
+   đang trượt qua nhau lúc chuyển cảnh). Selector 3 lớp class ở đây từng
+   thắng .carousel-item-next/-prev (1 lớp) của Bootstrap do specificity cao
+   hơn, khiến slide sắp trượt vào bị ẩn (display:none) suốt lúc chuyển cảnh -
+   lộ nền phía sau ra giữa 2 slide thay vì thấy ảnh trượt mượt. */
+.hero-slider .carousel-item {
+    /* height KHÔNG đặt ở đây nữa - từng là 480px "chết" còn sót lại từ bản
+       thiết kế cũ trước khi đổi sang tỉ lệ 4,6:1 (.hero-main-carousel bên
+       trên, dùng aspect-ratio) - height cố định ở đây ngầm THẮNG aspect-ratio
+       (2 thuộc tính khác nhau, height tường minh luôn thắng cho trục đó) nên
+       vô hiệu hoá hẳn phần sửa lỗi mất chữ/mất nội dung 2 mép ảnh trên di
+       động. position/transition giữ lại dù trùng với Bootstrap gốc (không
+       hại gì, tránh đụng nhiều hơn cần thiết). */
+    position: relative;
+    background: #000;
+    transition: transform .6s ease-in-out;
+}
+
+.hero-slider .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.2) 100%);
+    z-index: 1;
+}
+
+.hero-slider .carousel-caption {
+    z-index: 2;
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 600px;
+}
+
+@media (max-width: 768px) {
+    .hero-slider .carousel-caption h1 {
+        font-size: 22px !important;
+    }
+    .hero-slider .carousel-caption .lead {
+        font-size: 13px !important;
+    }
+}
+
+.bg-warning-subtle { background-color: rgba(255, 193, 7, 0.15) !important; }
+.bg-success-subtle { background-color: rgba(25, 135, 84, 0.15) !important; }
+.bg-danger-subtle { background-color: rgba(220, 53, 69, 0.15) !important; }
+
+/* ===== Gộp từ subpages.css (cùng lý do gộp main.css ở trên) - nội dung
+   giữ NGUYÊN, chỉ nối file. */
+/*==================================================
+        DIEN MAY NK - SUB-PAGES COMPONENT STYLES
+==================================================*/
+
+/*--- PRODUCT CARD (dùng chung ở trang Category & các khối liên quan) ---*/
+.product-card {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+}
+
+.product-card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+}
+
+.product-card .badge-discount {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: var(--danger, #dc3545);
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+}
+
+.product-card .badge-outofstock {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #6c757d;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+}
+
+.product-card .product-img {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border, #e8e8e8);
+    background: #fff;
+}
+
+.product-card .product-img > a {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-card .product-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform .3s ease;
+}
+
+.product-card .product-img.out-of-stock img {
+    opacity: .5;
+}
+
+.product-card:hover .product-img img {
+    transform: scale(1.05);
+}
+
+.product-card .product-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Trước đây class này nằm trên <p> bọc ngoài, còn <a> bên trong chỉ là 1
+   link nội tuyến theo đúng độ cao dòng chữ - vùng bấm/chạm THẬT của <a> nhỏ
+   hơn hẳn khung 38px (2 dòng) nhìn thấy bằng mắt, PageSpeed Insights báo
+   "đích chạm có kích thước chưa phù hợp". Chuyển các class này (kể cả
+   text-truncate-2 - webkit-box khiến phần tử tự thành khối) sang thẳng <a>
+   (xem ProductCard.jsx) để toàn bộ khung 2 dòng đều bấm/chạm được, không
+   còn vùng "chết" nào quanh chữ. */
+.product-card .product-title {
+    min-height: 38px;
+    color: #222;
+}
+
+.product-card .product-title:hover {
+    color: var(--secondary, #0D6EFD);
+}
+
+/* min-height bắt buộc phải có - đo thực tế trên production phát hiện: giá
+   ngắn (vd "915.239đ 1.490.000đ") vừa 1 dòng cao ~25px, giá dài hơn (vd
+   "5.731.602đ 9.331.000đ", nhiều chữ số hơn) TRÀN xuống dòng 2 (flex-wrap)
+   cao tới ~47px - lệch hẳn 22px giữa 2 sản phẩm cạnh nhau trong cùng 1 hàng
+   lưới, kéo theo nút "Mua ngay" + hàng 3 nút nhỏ bên dưới bị lệch cao thấp
+   theo. 48px = đủ chỗ cho trường hợp XẤU NHẤT (2 dòng), y hệt cách
+   .product-title đã dùng min-height:38px để tránh vấn đề tương tự. */
+.product-card .product-price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 48px;
+    /* Neo dòng giá xuống ĐÁY khung 48px (thay vì mặc định neo lên đỉnh) -
+       giá ngắn 1 dòng sẽ để trống phần trên (giáp tiêu đề, ít bị chú ý hơn)
+       thay vì để trống phần dưới (giáp sát nút "Mua ngay", nhìn giống lỗi
+       hụt hẫng/khoảng trống thừa ngay trước nút bấm). */
+    align-content: flex-end;
+}
+
+/* Ghi đè màu đỏ mặc định của Bootstrap (.text-danger, #dc3545) - PageSpeed
+   Insights đo được tỷ lệ tương phản với nền trắng chỉ ~4,47:1, thiếu chút
+   so với mức 4.5:1 cần cho chữ thường (không tính "chữ lớn" dù có fw-bold,
+   vì cỡ chữ 1.05rem chưa đạt ngưỡng 18.66px đậm). Dùng lại đúng #C1121F -
+   sắc đỏ đã có sẵn trong gradient khu Flash Sale (xem .flash-sale-panel) -
+   vừa cùng tông màu thương hiệu vừa đạt ~6,1:1, dư an toàn. `!important` bắt
+   buộc phải có - lớp .text-danger của Bootstrap tự dùng !important, chỉ
+   specificity cao hơn không đủ thắng.
+*/
+.product-card .current-price {
+    font-size: 1.05rem;
+    color: #C1121F !important;
+}
+
+.product-card .old-price {
+    font-size: 12px;
+    /* #999 trên nền trắng chỉ ~2,85:1, không đạt yêu cầu tương phản dù là
+       giá cũ/thông tin phụ - #6c757d (xám trung tính quen thuộc, Bootstrap
+       cũng dùng làm secondary) đạt ~4,8:1, vẫn đủ mờ để phân biệt với giá
+       hiện tại. */
+    color: #6c757d;
+    text-decoration: line-through;
+    margin-left: 6px;
+}
+
+/*--- STYLE TRANG CATEGORY (DANH MỤC) ---*/
+.filter-sidebar {
+    position: sticky;
+    top: 100px;
+    z-index: 10;
+}
+
+.filter-group h6 {
+    color: #222;
+    border-left: 3px solid #FFC107;
+    padding-left: 8px;
+}
+
+/* Danh sách thương hiệu trước đây xếp 1 cột dọc - danh mục nào có nhiều
+   hãng (vd Điện Gia Dụng) kéo dài xuống rất xa, ép người dùng cuộn nhiều
+   mới thấy hết "Khoảng giá" bên dưới. Chia 2 cột bằng CSS multi-column
+   (không phải Bootstrap row/col vì số lượng hãng không cố định, cột tự
+   cân bằng số dòng mỗi bên) - rút ngắn khoảng phân nửa chiều cao. */
+.filter-brand-list {
+    column-count: 2;
+    column-gap: 12px;
+}
+.filter-brand-list .form-check {
+    break-inside: avoid;
+}
+
+/*--- Danh mục con (sub-category quick filter) ---*/
+.sub-filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sub-filter-link {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: #555;
+    text-decoration: none;
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+
+.sub-filter-link:hover {
+    background: #fff8e1;
+    color: #222;
+}
+
+.sub-filter-link.active {
+    background: var(--primary, #FFC107);
+    color: var(--dark, #222);
+    font-weight: 700;
+}
+
+.form-check-input:checked {
+    background-color: #FFC107;
+    border-color: #FFC107;
+}
+
+/*--- STYLE TRANG DETAIL (CHI TIẾT SẢN PHẨM) ---*/
+.product-gallery {
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.product-gallery img {
+    max-height: 380px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.product-gallery img:hover {
+    transform: scale(1.03);
+}
+
+.thumbnail-list {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.thumbnail-item {
+    width: 64px;
+    height: 64px;
+    border: 2px solid var(--border, #e8e8e8);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.thumbnail-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.thumbnail-item.active {
+    border-color: var(--secondary, #0D6EFD);
+}
+
+.price-box {
+    border-left: 4px solid #dc3545;
+}
+
+.specs-table td:first-child {
+    font-weight: 600;
+    color: #555;
+    width: 35%;
+}
+
+.product-tabs {
+    background: #fafafa;
+}
+
+.product-tab-btn {
+    border: 1px solid var(--border, #e8e8e8);
+    background: #fff;
+    color: #777;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    transition: var(--transition);
+}
+
+.product-tab-btn:hover {
+    color: #222;
+}
+
+.product-tab-btn.active {
+    border-color: var(--secondary, #0D6EFD);
+    color: var(--secondary, #0D6EFD);
+    background: #eef5ff;
+}
+
+.product-description p {
+    color: #333;
+    line-height: 1.7;
+}
+
+.product-description ul {
+    padding-left: 20px;
+}
+
+.product-description li {
+    line-height: 1.7;
+    margin-bottom: 4px;
+}
+
+/*--- BỘ CHỌN SỐ LƯỢNG (Quantity Selector) ---*/
+.qty-selector {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border, #e8e8e8);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.qty-selector button {
+    width: 40px;
+    height: 44px;
+    border: none;
+    background: #f5f5f5;
+    font-size: 18px;
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+.qty-selector button:hover { background: #e9e9e9; }
+
+.qty-selector input {
+    width: 50px;
+    height: 44px;
+    border: none;
+    border-left: 1px solid var(--border, #e8e8e8);
+    border-right: 1px solid var(--border, #e8e8e8);
+    text-align: center;
+    font-weight: bold;
+}
+
+/*--- STYLE TRANG CART (GIỎ HÀNG) ---*/
+.cart-item {
+    transition: all 0.2s ease;
+}
+.cart-item:hover {
+    background-color: #fafafa;
+}
+
+/* Khối "Tóm tắt đơn hàng" bám dính khi cuộn - chỉ từ lg trở lên (dưới đó 2
+   cột xếp chồng, bám cuộn trông lỗi). Cột phải (.col-lg-5) tự giãn cao bằng
+   cột trái nhờ align-items:stretch mặc định của .row Bootstrap, nên card có
+   khoảng trống để "trượt" và tự dừng khi cột kết thúc (không đè lên footer).
+   Hoạt động được nhờ .site-bg-wrap dùng overflow:clip thay vì hidden. */
+@media (min-width: 992px) {
+    .cart-summary-sticky {
+        position: sticky;
+        top: 16px;
+    }
+}
+#checkout-form .form-control:focus {
+    border-color: #FFC107;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+/*==================================================
+    STYLE TRANG THÔNG TIN (Giới thiệu, Liên hệ,
+    Chính sách, Vận chuyển, Hướng dẫn, FAQ...)
+==================================================*/
+.info-banner {
+    background: linear-gradient(135deg, var(--dark, #222) 0%, #3a3a3a 100%);
+    padding: 48px 0;
+    color: #fff;
+}
+
+.info-banner h1 {
+    font-size: 1.9rem;
+    font-weight: 800;
+}
+
+.info-banner .breadcrumb {
+    --bs-breadcrumb-divider-color: rgba(255,255,255,.5);
+    margin-bottom: .5rem;
+}
+
+.info-banner .breadcrumb a {
+    color: rgba(255,255,255,.75);
+    text-decoration: none;
+}
+
+.info-banner .breadcrumb a:hover { color: #fff; }
+
+.info-banner .breadcrumb-item.active {
+    color: var(--primary, #FFC107);
+}
+
+/* Ảnh đội ngũ/môi trường làm việc cạnh banner trang Tuyển dụng - CHỈ trang
+   /tuyen-dung dùng class này (không đụng .info-banner dùng chung 14+ trang
+   thông tin khác), ẩn hẳn khi admin chưa tải ảnh lên (xem TuyenDung.jsx). */
+.jobs-hero-image {
+    width: 100%;
+    max-width: 380px;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+}
+
+@media (max-width: 991.98px) {
+    .jobs-hero-image {
+        max-width: 100%;
+        height: 200px;
+    }
+}
+
+/*--- Menu điều hướng phụ (sidebar) dùng chung cho các trang chính sách/hỗ trợ ---*/
+.info-side-nav {
+    position: sticky;
+    top: 100px;
+}
+
+.info-side-nav .list-group-item {
+    border: none;
+    border-left: 3px solid transparent;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: #444;
+    transition: var(--transition);
+}
+
+.info-side-nav .list-group-item:hover {
+    background: #fff8e1;
+    color: var(--dark, #222);
+}
+
+.info-side-nav .list-group-item.active {
+    border-left-color: var(--primary, #FFC107);
+    background: #fff8e1;
+    color: var(--dark, #222);
+}
+
+/*--- Nội dung văn bản (chính sách, giới thiệu...) ---*/
+.info-content h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1.75rem;
+    margin-bottom: .75rem;
+    color: var(--dark, #222);
+}
+
+.info-content h2:first-child { margin-top: 0; }
+
+.info-content p, .info-content li {
+    color: #555;
+    line-height: 1.8;
+}
+
+.info-content ul { padding-left: 1.2rem; }
+
+/*--- Trang giới thiệu: số liệu nổi bật ---*/
+.stat-box {
+    text-align: center;
+    padding: 24px 10px;
+}
+
+.stat-box .stat-number {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: var(--secondary, #0D6EFD);
+}
+
+.stat-box .stat-label {
+    color: #777;
+    font-size: .9rem;
+}
+
+/*--- Timeline / hành trình phát triển ---*/
+.about-timeline {
+    border-left: 3px solid var(--primary, #FFC107);
+    padding-left: 24px;
+}
+
+.about-timeline .timeline-item {
+    position: relative;
+    padding-bottom: 28px;
+}
+
+.about-timeline .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--secondary, #0D6EFD);
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px var(--secondary, #0D6EFD);
+}
+
+.about-timeline .timeline-item:last-child { padding-bottom: 0; }
+
+/*--- Trang liên hệ ---*/
+.contact-info-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.contact-info-item .contact-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #fff8e1;
+    color: var(--primary-hover, #FFB300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+}
+
+.contact-map iframe {
+    width: 100%;
+    height: 320px;
+    border: 0;
+    border-radius: 12px;
+}
+
+/*--- FAQ Accordion ---*/
+.faq-accordion .accordion-button:not(.collapsed) {
+    background-color: #fff8e1;
+    color: var(--dark, #222);
+    box-shadow: none;
+}
+
+.faq-accordion .accordion-button:focus {
+    box-shadow: none;
+    border-color: var(--primary, #FFC107);
+}
+
+.faq-accordion .accordion-item {
+    border: 1px solid var(--border, #e8e8e8);
+    border-radius: 10px !important;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.faq-accordion .accordion-button {
+    font-weight: 700;
+}
+
+/*--- Các bước hướng dẫn mua hàng ---*/
+.guide-step {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.guide-step .guide-step-number {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--primary, #FFC107);
+    color: var(--dark, #222);
+    font-weight: 800;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/*--- MODAL ĐĂNG NHẬP / ĐĂNG KÝ / ỨNG TUYỂN (JobApplicationModal dùng chung
+      class này) ---*/
+.auth-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 20, 0.6);
+    /* Cao hơn hẳn #site-header.sticky (999) - trước là 1080, vẫn bị header
+       dính (sticky) đè lên phần trên của modal trên thực tế (báo lỗi kèm
+       ảnh chụp), dù về lý thuyết 1080 > 999 đã đủ. Nâng hẳn lên mức an toàn,
+       chỉ còn thấp hơn #toast-container (2000) để toast báo lỗi/thành công
+       vẫn luôn hiện được phía trên nếu cần. */
+    z-index: 1500;
+    display: flex;
+    /* KHÔNG dùng align-items:center - lỗi CSS kinh điển: flex item cao hơn
+       container bị "center" thì phần tràn ra ở ĐẦU (phía trên) không cuộn
+       tới được ở một số trình duyệt/tình huống, dù container có overflow-y:
+       auto. Căn giữa bằng margin:auto trên chính .auth-modal-card (bên
+       dưới) mới cho cuộn được đầy đủ tới cả 2 đầu phần tràn ra khi nội dung
+       cao hơn khung nhìn. */
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.auth-modal-card {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    margin: auto 0;
+}
+
+/* Form sửa đơn được đưa ra document.body bằng React portal để không còn bị
+   stacking context của bảng, main, header hoặc widget nổi đè lên. Dùng class
+   riêng vì form này dài và rộng hơn các popup đăng nhập/hồ sơ. */
+.edit-order-modal-backdrop {
+    z-index: 1600;
+    overscroll-behavior: contain;
+}
+
+.edit-order-modal-card {
+    max-width: 680px;
+    max-height: calc(100dvh - 40px);
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 575.98px) {
+    .edit-order-modal-backdrop {
+        padding: 12px;
+    }
+
+    .edit-order-modal-card {
+        max-height: calc(100dvh - 24px);
+        border-radius: 14px;
+        padding: 20px 16px;
+    }
+
+    /* Hai ô địa chỉ không bị ép nhỏ hoặc chồng chữ trên điện thoại. */
+    .edit-order-modal-card .row > .col-6 {
+        width: 100%;
+    }
+}
+
+/*--- Đơn hàng của tôi: đổi bảng thành thẻ dọc trên điện thoại. Bảng 6 cột
+      trước đây bị co ngang khiến nút Sửa/Hủy xuống từng chữ và các cột đầu
+      bị khuất khỏi màn hình. Desktop vẫn dùng bảng như cũ. ---*/
+@media (max-width: 767.98px) {
+    .my-orders-table-responsive {
+        overflow: visible;
+    }
+
+    .my-orders-table,
+    .my-orders-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .my-orders-table thead {
+        display: none;
+    }
+
+    .my-orders-table .my-order-row {
+        display: block;
+        padding: 12px 16px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .my-orders-table .my-order-row > td {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 7px 0;
+        border: 0;
+        text-align: right !important;
+        white-space: normal;
+    }
+
+    .my-orders-table .my-order-row > td::before {
+        content: attr(data-label);
+        flex: 0 0 104px;
+        color: #555;
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .my-orders-table .my-order-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 46px;
+        gap: 8px;
+        margin-top: 5px;
+        padding-top: 12px !important;
+        border-top: 1px solid #eee !important;
+    }
+
+    .my-orders-table .my-order-actions::before {
+        display: none;
+    }
+
+    .my-orders-table .my-order-actions .btn {
+        position: relative;
+        z-index: 2;
+        display: inline-flex;
+        min-width: 0;
+        min-height: 46px;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin-right: 0 !important;
+        padding: 8px 10px;
+        pointer-events: auto;
+        touch-action: manipulation;
+        white-space: nowrap;
+    }
+
+    .my-orders-table .my-order-detail-row {
+        display: block;
+    }
+
+    .my-orders-table .my-order-detail-row > td {
+        display: block;
+        width: 100%;
+        padding: 12px 16px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .my-orders-table .my-order-detail-row .table {
+        display: table;
+    }
+
+    .my-orders-table .my-order-detail-row .table tbody {
+        display: table-row-group;
+    }
+}
+
+/* Vùng chạm rõ ràng cho các thao tác trong hộp tài khoản trên màn hình cảm
+   ứng. Modal được render bằng portal nên các nút không còn nằm trong stacking
+   context/hover layer của header. */
+.customer-profile-modal-card .btn,
+.customer-profile-modal-card .auth-modal-close {
+    position: relative;
+    z-index: 2;
+    min-height: 48px;
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+
+.customer-profile-modal-card .auth-modal-close {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+}
+
+.auth-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #f5f5f5;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+
+.auth-modal-close:hover {
+    background: #e9e9e9;
+    color: #222;
+}
+
+/*--- Popup chào mừng (WelcomePopup.jsx) ---*/
+.welcome-popup-card {
+    max-width: 340px;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Ở màn hình điện thoại, 340px gần bằng cả chiều ngang màn hình (~89% với
+   viewport 375px) cộng ảnh khổ đứng 3:4 cao gần hết màn hình - thu nhỏ thêm
+   riêng cho mobile để popup không chiếm gần trọn màn hình mỗi lần hiện. */
+@media (max-width: 480px) {
+    .welcome-popup-card {
+        max-width: 300px;
+    }
+}
+
+.welcome-popup-card .auth-modal-close {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.welcome-popup-promo-link {
+    display: block;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Popup mời đăng ký dùng <button> (mở AuthModal, không phải điều hướng
+   trang) thay vì <Link> như popup Flash Sale - reset lại style mặc định của
+   button để trông giống hệt 1 ảnh bấm được, không lộ viền/nền nút. */
+.welcome-popup-signup-image {
+    width: 100%;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.welcome-popup-promo-link img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    display: block;
+}
+
+.welcome-popup-promo-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 20px 20px 24px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
+    color: #fff;
+}
+
+.welcome-popup-promo-caption .promo-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    text-wrap: balance;
+}
+
+/*--- Banner xin phép cookie (CookieConsentBanner.jsx) - thẻ nổi góc dưới
+      trái, KHÔNG dùng backdrop toàn màn hình (khác modal đăng nhập/popup
+      chào mừng) vì đây là thông báo đi kèm chứ không chặn hẳn luồng mua
+      sắm. z-index 1400: thấp hơn .auth-modal-backdrop (1500, khách vẫn mở
+      được form đăng nhập/đăng ký bình thường trong lúc banner còn hiện),
+      cao hơn hẳn .contact-fab/#backToTop/.compare-bar (1000-1050). ---*/
+.cookie-consent-banner {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 1400;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 480px) {
+    .cookie-consent-banner {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        max-width: none;
+    }
+}
+
+.cookie-consent-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.cookie-consent-header strong {
+    font-size: 1.05rem;
+}
+
+.cookie-consent-emoji {
+    font-size: 1.3rem;
+}
+
+.cookie-consent-desc {
+    font-size: 13.5px;
+    color: #555;
+    margin-bottom: 14px;
+}
+
+.cookie-consent-list {
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    margin-bottom: 10px;
+}
+
+.cookie-consent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 13.5px;
+}
+
+.cookie-consent-row .form-check {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.cookie-consent-link {
+    font-size: 12.5px;
+    color: #555;
+    margin-bottom: 14px;
+}
+
+.cookie-consent-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
