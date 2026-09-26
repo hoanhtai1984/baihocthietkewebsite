@@ -19,7 +19,12 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // Khởi tạo NGAY từ localStorage (không đợi useEffect) - SPA thuần không có
+  // SSR nên đọc đồng bộ ở đây an toàn. Trước đây khởi tạo null rồi mới đồng
+  // bộ trong useEffect khiến AdminLayout kiểm tra isAuthenticated ở lần
+  // render ĐẦU (trước khi effect chạy) luôn thấy false -> đá khỏi trang admin
+  // dù đã đăng nhập, mỗi khi tải lại trang hoặc gõ thẳng URL.
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
 
   useEffect(() => {
     function sync() {

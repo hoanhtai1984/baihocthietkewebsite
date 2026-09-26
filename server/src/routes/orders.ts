@@ -64,6 +64,15 @@ router.post('/', optionalAuth, async (req, res, next) => {
         data: { code: buildOrderCode(created.id) },
         include: { items: true },
       });
+    }, {
+      // Mặc định Prisma chỉ cho 5s/giao dịch - đủ với DB local nhưng Neon
+      // (Postgres serverless, "ngủ" khi không ai gọi trong 1 khoảng thời
+      // gian) có độ trễ round-trip cao hơn hẳn, đặc biệt lần gọi ĐẦU sau
+      // lúc rảnh (cold start) - từng gặp lỗi thật "Transaction already
+      // closed" khi checkout. Nới rộng để chịu được cold start + vài vòng
+      // lặp cập nhật tồn kho.
+      timeout: 15000,
+      maxWait: 10000,
     });
 
     logger.info({ orderId: order.id, userId: req.user?.id }, 'Order created');
