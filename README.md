@@ -16,7 +16,24 @@ client/   - Frontend (Vite React SPA)
 server/   - Backend (Express + Prisma)
 ```
 
-## Setup lần đầu
+## Chạy nhanh (đã setup sẵn DB Neon)
+
+Máy này đã cài `npm install` + nối sẵn DB Neon + seed dữ liệu — chỉ cần
+chạy 1 file để bật cả server lẫn client:
+
+```bash
+start-all.bat
+```
+
+(double-click file `start-all.bat` ở thư mục gốc dự án cũng được). File
+này mở 2 cửa sổ terminal: server tại `http://localhost:4001`, client tại
+`http://localhost:5174` — đợi vài giây rồi mở trình duyệt vào
+`http://localhost:5174`.
+
+Tài khoản mẫu: Admin `admin@example.com` / `admin123`, Khách
+`customer@example.com` / `customer123`.
+
+## Setup lần đầu (máy khác / cài lại từ đầu)
 
 ### 1. Database (PostgreSQL)
 
