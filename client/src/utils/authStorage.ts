@@ -3,6 +3,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: 'CUSTOMER' | 'ADMIN';
+  phone?: string | null;
 }
 
 const ACCESS_KEY = 'dmnk_mini_access_token';
@@ -32,6 +33,13 @@ export function getStoredUser(): AuthUser | null {
 export function setAuth(user: AuthUser, accessToken: string, refreshToken: string) {
   localStorage.setItem(ACCESS_KEY, accessToken);
   localStorage.setItem(REFRESH_KEY, refreshToken);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+}
+
+// Cập nhật thông tin người dùng đã lưu (đổi tên/SĐT, hoặc đồng bộ lại quyền từ
+// server) mà không đụng tới token.
+export function updateStoredUser(user: AuthUser) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 }

@@ -2,8 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import * as authApi from '../api/auth';
 import {
   getStoredUser,
+  getAccessToken,
   setAuth,
   clearAuth,
+  updateStoredUser,
   AUTH_CHANGED_EVENT,
   type AuthUser,
 } from '../utils/authStorage';
@@ -11,12 +13,19 @@ import {
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<AuthUser>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth phải dùng bên trong AuthProvider');
+  return ctx;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Khởi tạo NGAY từ localStorage (không đợi useEffect) - SPA thuần không có
@@ -30,19 +39,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     function sync() {
       setUser(getStoredUser());
     }
-    sync();
     window.addEventListener(AUTH_CHANGED_EVENT, sync);
     return () => window.removeEventListener(AUTH_CHANGED_EVENT, sync);
+  }, []);
+
+  // Mỗi lần mở web: hỏi lại server "tôi là ai" để đồng bộ quyền/tên mới nhất.
+  // Phiên hỏng (tài khoản bị xoá, token hết hạn hẳn) thì tự đăng xuất - interceptor
+  // trong api/http.ts đã lo phần 401.
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    authApi
+      .getMe()
+      .then((me) => updateStoredUser(me))
+      .catch(() => {
+        /* lỗi mạng: giữ nguyên phiên cũ, 401 đã được interceptor xử lý */
+      });
   }, []);
 
   async function login(email: string, password: string) {
     const data = await authApi.login({ email, password });
     setAuth(data.user, data.accessToken, data.refreshToken);
+    return data.user as AuthUser;
   }
 
   async function register(name: string, email: string, password: string, phone?: string) {
     const data = await authApi.register({ name, email, password, phone });
     setAuth(data.user, data.accessToken, data.refreshToken);
+    return data.user as AuthUser;
   }
 
   function logout() {
@@ -54,10 +77,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth phải dùng bên trong AuthProvider');
-  return ctx;
 }

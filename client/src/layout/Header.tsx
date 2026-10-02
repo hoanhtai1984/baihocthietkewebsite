@@ -65,10 +65,12 @@ function Header() {
       return;
     }
     debounceRef.current = setTimeout(() => {
-      getProducts({ search: value }).then((results: any[]) => {
-        setSuggestions(results.slice(0, 5));
-        setShowSuggestions(true);
-      });
+      getProducts({ search: value })
+        .then((results: any[]) => {
+          setSuggestions(results.slice(0, 5));
+          setShowSuggestions(true);
+        })
+        .catch(() => setShowSuggestions(false));
     }, 300);
   }
 
@@ -160,6 +162,9 @@ function Header() {
                       {accountMenuOpen && (
                         <div className="account-hover-preview" style={{ display: 'block', position: 'absolute', top: '100%', right: 0, zIndex: 10 }}>
                           <div className="fw-bold mb-2">{user?.name}</div>
+                          <Link to="/tai-khoan" className="d-block mb-2" onClick={() => setAccountMenuOpen(false)}>
+                            <i className="bi bi-person-gear"></i> Tài khoản của tôi
+                          </Link>
                           <Link to="/don-hang-cua-toi" className="d-block mb-2" onClick={() => setAccountMenuOpen(false)}>
                             <i className="bi bi-receipt"></i> Đơn hàng của tôi
                           </Link>
@@ -168,7 +173,7 @@ function Header() {
                               <i className="bi bi-speedometer2"></i> Trang quản trị
                             </Link>
                           )}
-                          <button type="button" className="btn btn-sm btn-outline-danger w-100" onClick={logout}>
+                          <button type="button" className="btn btn-sm btn-outline-danger w-100" onClick={() => { setAccountMenuOpen(false); logout(); navigate('/'); }}>
                             Đăng xuất
                           </button>
                         </div>
@@ -213,6 +218,38 @@ function Header() {
                     </Link>
                   </li>
                 ))}
+                {/* Trên điện thoại menu tài khoản ở header bị ẩn - đưa các lối đi chính vào menu này */}
+                <li className="nav-item d-lg-none">
+                  <Link className="nav-link" to="/tra-cuu-don-hang" onClick={() => setMobileMenuOpen(false)}>
+                    <i className="bi bi-search"></i> Tra cứu đơn hàng
+                  </Link>
+                </li>
+                {isAuthenticated ? (
+                  <>
+                    <li className="nav-item d-lg-none">
+                      <Link className="nav-link" to="/don-hang-cua-toi" onClick={() => setMobileMenuOpen(false)}>
+                        <i className="bi bi-receipt"></i> Đơn hàng của tôi
+                      </Link>
+                    </li>
+                    <li className="nav-item d-lg-none">
+                      <Link className="nav-link" to="/tai-khoan" onClick={() => setMobileMenuOpen(false)}>
+                        <i className="bi bi-person-gear"></i> Tài khoản của tôi
+                      </Link>
+                    </li>
+                    {user?.role === 'ADMIN' && (
+                      <li className="nav-item d-lg-none">
+                        <Link className="nav-link" to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                          <i className="bi bi-speedometer2"></i> Trang quản trị
+                        </Link>
+                      </li>
+                    )}
+                    <li className="nav-item d-lg-none">
+                      <button type="button" className="nav-link btn btn-link text-start" onClick={() => { setMobileMenuOpen(false); logout(); navigate('/'); }}>
+                        <i className="bi bi-box-arrow-right"></i> Đăng xuất
+                      </button>
+                    </li>
+                  </>
+                ) : null}
               </ul>
             </div>
           </div>

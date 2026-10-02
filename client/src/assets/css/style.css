@@ -773,6 +773,8 @@ ul {
 
 .app-toast.show { transform: translateX(0); }
 .app-toast.success { border-left-color: #198754; }
+.app-toast.error { border-left-color: #dc3545; }
+.app-toast.error i { color: #dc3545; }
 .app-toast i { font-size: 20px; color: #198754; }
 
 /*==================================================

@@ -1,24 +1,54 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
+import { normalizeText } from '../utils/text';
 
 const router = Router();
 
+const SORTS: Record<string, any> = {
+  newest: { createdAt: 'desc' },
+  'price-asc': { price: 'asc' },
+  'price-desc': { price: 'desc' },
+  'name-asc': { name: 'asc' },
+};
+
+// GET /api/products?category=&search=&brand=&minPrice=&maxPrice=&sort=
+// Tìm kiếm KHÔNG phân biệt dấu ("dieu hoa" ra "Điều Hòa") theo tên + hãng.
 router.get('/', async (req, res, next) => {
   try {
-    const { category, search } = req.query;
+    const { category, search, brand, minPrice, maxPrice, sort } = req.query;
     const where: any = { hidden: false };
-    if (category) {
-      where.category = { slug: String(category) };
-    }
-    if (search) {
-      where.name = { contains: String(search), mode: 'insensitive' };
-    }
-    const products = await prisma.product.findMany({
+    if (category) where.category = { slug: String(category) };
+    if (brand) where.brand = { equals: String(brand), mode: 'insensitive' };
+
+    const price: { gte?: number; lte?: number } = {};
+    if (minPrice !== undefined && minPrice !== '' && Number.isFinite(Number(minPrice))) price.gte = Number(minPrice);
+    if (maxPrice !== undefined && maxPrice !== '' && Number.isFinite(Number(maxPrice))) price.lte = Number(maxPrice);
+    if (price.gte !== undefined || price.lte !== undefined) where.price = price;
+
+    let products = await prisma.product.findMany({
       where,
       include: { category: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: SORTS[String(sort)] || SORTS.newest,
     });
+
+    const keyword = normalizeText(String(search || ''));
+    if (keyword) {
+      products = products.filter((p) => normalizeText(`${p.name} ${p.brand}`).includes(keyword));
+    }
     res.json(products);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Danh sách hãng đang có (dùng cho bộ lọc) - khai báo TRƯỚC '/:slug' để
+// "brands" không bị hiểu nhầm là slug sản phẩm.
+router.get('/brands', async (req, res, next) => {
+  try {
+    const where: any = { hidden: false };
+    if (req.query.category) where.category = { slug: String(req.query.category) };
+    const rows = await prisma.product.findMany({ where, select: { brand: true }, distinct: ['brand'], orderBy: { brand: 'asc' } });
+    res.json(rows.map((r) => r.brand));
   } catch (err) {
     next(err);
   }

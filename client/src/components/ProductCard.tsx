@@ -16,15 +16,19 @@ interface Product {
 
 function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
-  const outOfStock = product.stock === 0;
+  const outOfStock = product.stock <= 0;
   const discount = product.oldPrice
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0;
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
-    addItem(product, 1);
-    showToast(`Đã thêm "${product.name}" vào giỏ hàng`);
+    const result = addItem(product, 1);
+    if (result.added <= 0) {
+      showToast(`Giỏ hàng đã có tối đa ${result.limit} sản phẩm này (hết số lượng còn lại).`, 'error');
+    } else {
+      showToast(`Đã thêm "${product.name}" vào giỏ hàng`);
+    }
   }
 
   function handleBuyNow(e: React.MouseEvent) {

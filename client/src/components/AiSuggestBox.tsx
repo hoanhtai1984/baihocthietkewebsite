@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { suggestProducts } from '../api/ai';
 import { formatMoney } from '../utils/format';
+import { apiErrorMessage } from '../utils/toast';
 
 function AiSuggestBox() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [source, setSource] = useState<'ai' | 'keyword' | ''>('');
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
 
@@ -18,9 +20,10 @@ function AiSuggestBox() {
     try {
       const data = await suggestProducts(query.trim());
       setSuggestions(data.suggestions || []);
+      setSource(data.source || '');
       setSearched(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Không gợi ý được lúc này, thử lại sau');
+      setError(apiErrorMessage(err, 'Không gợi ý được lúc này, thử lại sau'));
     } finally {
       setLoading(false);
     }
@@ -38,6 +41,7 @@ function AiSuggestBox() {
           placeholder='Ví dụ: "tủ lạnh dưới 10 triệu cho gia đình 4 người"'
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          maxLength={300}
         />
         <button type="submit" className="btn btn-warning fw-bold" disabled={loading}>
           {loading ? 'Đang tìm...' : 'Gợi ý'}
@@ -47,7 +51,7 @@ function AiSuggestBox() {
       {error && <p className="text-danger small mt-2 mb-0">{error}</p>}
 
       {searched && !loading && suggestions.length === 0 && !error && (
-        <p className="text-muted small mt-2 mb-0">AI không tìm thấy sản phẩm phù hợp.</p>
+        <p className="text-muted small mt-2 mb-0">Không tìm thấy sản phẩm phù hợp. Thử mô tả khác, ví dụ nêu loại sản phẩm hoặc ngân sách.</p>
       )}
 
       {suggestions.length > 0 && (
@@ -66,6 +70,9 @@ function AiSuggestBox() {
               </div>
             </Link>
           ))}
+          {source === 'keyword' && (
+            <p className="text-muted small mb-0">Gợi ý theo từ khoá và ngân sách trong câu hỏi (chưa bật AI Gemini).</p>
+          )}
         </div>
       )}
     </div>

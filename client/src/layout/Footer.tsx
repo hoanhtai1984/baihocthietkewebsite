@@ -21,6 +21,7 @@ function Footer() {
               <li className="mb-2"><Link to="/danh-muc" className="text-white-50">Tất cả sản phẩm</Link></li>
               <li className="mb-2"><Link to="/gio-hang" className="text-white-50">Giỏ hàng</Link></li>
               <li className="mb-2"><Link to="/don-hang-cua-toi" className="text-white-50">Đơn hàng của tôi</Link></li>
+              <li className="mb-2"><Link to="/tra-cuu-don-hang" className="text-white-50">Tra cứu đơn hàng</Link></li>
             </ul>
           </div>
           <div className="col-md-4">

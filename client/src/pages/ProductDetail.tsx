@@ -1,25 +1,45 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProduct } from '../api/products';
+import { getProduct, getProducts } from '../api/products';
 import { formatMoney } from '../utils/format';
 import { addItem } from '../utils/cart';
 import { showToast } from '../utils/toast';
+import ProductCard from '../components/ProductCard';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<any>(null);
-  const [notFound, setNotFound] = useState(false);
+  // Gắn dữ liệu với slug đã tải: slug trên URL khác slug đã tải = đang tải. Nhờ vậy
+  // chuyển giữa 2 sản phẩm (bấm vào sản phẩm liên quan) không còn hiện nhầm sản phẩm cũ.
+  const [state, setState] = useState<{ slug: string; product: any | null; related: any[] } | null>(null);
   const [qty, setQty] = useState(1);
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     getProduct(slug)
-      .then(setProduct)
-      .catch(() => setNotFound(true));
+      .then(async (product) => {
+        const related = await getProducts({ category: product.category.slug })
+          .then((list: any[]) => list.filter((p) => p.id !== product.id).slice(0, 4))
+          .catch(() => []);
+        if (cancelled) return;
+        setQty(1);
+        setState({ slug, product, related });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ slug, product: null, related: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
-  if (notFound) {
+  const loaded = state?.slug === slug ? state : null;
+  const product = loaded?.product ?? null;
+  useDocumentTitle(product?.name || (loaded ? 'Không tìm thấy sản phẩm' : undefined));
+
+  if (loaded && !product) {
     return (
       <div className="container py-5 text-center">
         <h1 className="fw-bold fs-3">Không tìm thấy sản phẩm</h1>
@@ -32,17 +52,28 @@ function ProductDetail() {
     return <div className="container py-5 text-center text-muted">Đang tải...</div>;
   }
 
-  const outOfStock = product.stock === 0;
+  const outOfStock = product.stock <= 0;
+  const maxQty = Math.min(99, product.stock);
   const discount = product.oldPrice
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0;
 
-  function handleAddToCart() {
-    addItem(product, qty);
-    showToast(`Đã thêm "${product.name}" vào giỏ hàng`);
+  function handleAddToCart(): boolean {
+    const result = addItem(product, qty);
+    if (result.added <= 0) {
+      showToast(`Giỏ hàng đã có tối đa ${result.limit} sản phẩm này (hết số lượng còn lại).`, 'error');
+      return false;
+    }
+    if (result.capped) {
+      showToast(`Chỉ thêm được ${result.added} - giỏ hàng đã đạt tối đa ${result.limit} sản phẩm này.`, 'error');
+    } else {
+      showToast(`Đã thêm "${product.name}" vào giỏ hàng`);
+    }
+    return true;
   }
 
   function handleBuyNow() {
+    // "Mua ngay" vẫn sang giỏ hàng kể cả khi giỏ đã đủ số lượng tối đa của sản phẩm này.
     addItem(product, qty);
     navigate('/gio-hang');
   }
@@ -97,17 +128,20 @@ function ProductDetail() {
             <span className="badge bg-secondary fs-6">Hết hàng</span>
           ) : (
             <div className="d-flex align-items-center gap-3 mb-3">
-              <label className="fw-semibold mb-0">Số lượng:</label>
+              <label className="fw-semibold mb-0" htmlFor="qty">Số lượng:</label>
               <input
+                id="qty"
                 type="number"
                 min={1}
-                max={99}
+                max={maxQty}
                 className="form-control"
                 style={{ width: 90 }}
                 value={qty}
-                onChange={(e) => setQty(Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
+                onChange={(e) => setQty(Math.max(1, Math.min(maxQty, Number(e.target.value) || 1)))}
               />
-              <span className="text-muted small">Còn {product.stock} sản phẩm</span>
+              <span className={`small ${product.stock <= 5 ? 'text-danger fw-semibold' : 'text-muted'}`}>
+                {product.stock <= 5 ? `Chỉ còn ${product.stock} sản phẩm` : `Còn ${product.stock} sản phẩm`}
+              </span>
             </div>
           )}
 
@@ -121,6 +155,19 @@ function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {loaded && loaded.related.length > 0 && (
+        <section className="mt-5">
+          <h2 className="fw-bold fs-4 mb-3">Sản phẩm cùng danh mục</h2>
+          <div className="row row-cols-2 row-cols-md-4 g-3">
+            {loaded.related.map((p) => (
+              <div className="col" key={p.id}>
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

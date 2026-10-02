@@ -1,5 +1,10 @@
 import http from './http';
 
+// Stats
+export function adminGetStats() {
+  return http.get('/admin/stats').then((r) => r.data);
+}
+
 // Products
 export function adminGetProducts() {
   return http.get('/admin/products').then((r) => r.data);
@@ -15,6 +20,9 @@ export function adminDeleteProduct(id: number) {
 }
 
 // Categories
+export function adminGetCategories() {
+  return http.get('/admin/categories').then((r) => r.data);
+}
 export function adminCreateCategory(data: any) {
   return http.post('/admin/categories', data).then((r) => r.data);
 }
@@ -26,8 +34,8 @@ export function adminDeleteCategory(id: number) {
 }
 
 // Orders
-export function adminGetOrders() {
-  return http.get('/admin/orders').then((r) => r.data);
+export function adminGetOrders(status?: string) {
+  return http.get('/admin/orders', { params: status ? { status } : undefined }).then((r) => r.data);
 }
 export function adminUpdateOrderStatus(id: number, status: string) {
   return http.patch(`/admin/orders/${id}/status`, { status }).then((r) => r.data);

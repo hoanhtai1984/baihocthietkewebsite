@@ -9,7 +9,7 @@ export function showToast(message: string, type: 'success' | 'error' = 'success'
   const toast = document.createElement('div');
   toast.className = `app-toast ${type}`;
   const icon = document.createElement('i');
-  icon.className = 'bi bi-check-circle-fill';
+  icon.className = type === 'error' ? 'bi bi-x-circle-fill' : 'bi bi-check-circle-fill';
   const text = document.createElement('span');
   // textContent, không phải innerHTML - message thường chèn tên sản phẩm
   // (dữ liệu do admin nhập/import Excel), nếu chứa thẻ HTML thì innerHTML sẽ
@@ -23,5 +23,10 @@ export function showToast(message: string, type: 'success' | 'error' = 'success'
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 350);
-  }, 2500);
+  }, type === 'error' ? 4000 : 2500);
+}
+
+// Lấy thông báo lỗi tiếng Việt từ phản hồi API (axios), rơi về câu mặc định.
+export function apiErrorMessage(err: any, fallback = 'Có lỗi xảy ra, vui lòng thử lại') {
+  return err?.response?.data?.message || fallback;
 }

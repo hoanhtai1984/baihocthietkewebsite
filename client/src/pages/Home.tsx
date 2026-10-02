@@ -4,20 +4,36 @@ import { getProducts } from '../api/products';
 import { getCategories } from '../api/categories';
 import ProductCard from '../components/ProductCard';
 import AiSuggestBox from '../components/AiSuggestBox';
+import useDocumentTitle from '../hooks/useDocumentTitle';
+import { apiErrorMessage } from '../utils/toast';
 
 function Home() {
+  useDocumentTitle();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     Promise.all([getProducts(), getCategories()])
       .then(([p, c]) => {
+        if (cancelled) return;
         setProducts(p);
         setCategories(c);
+        setError('');
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .catch((err) => {
+        if (!cancelled) setError(apiErrorMessage(err, 'Không kết nối được máy chủ'));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   return (
     <div>
@@ -45,6 +61,13 @@ function Home() {
         <h2 className="fw-bold fs-4 mt-4 mb-3">Sản phẩm nổi bật</h2>
         {loading ? (
           <p className="text-muted">Đang tải...</p>
+        ) : error ? (
+          <div className="text-center py-4">
+            <p className="text-danger">{error}</p>
+            <button className="btn btn-outline-secondary" onClick={() => { setLoading(true); setReloadKey((k) => k + 1); }}>Thử lại</button>
+          </div>
+        ) : products.length === 0 ? (
+          <p className="text-muted">Chưa có sản phẩm nào.</p>
         ) : (
           <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
             {products.map((p) => (
