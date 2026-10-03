@@ -6,13 +6,14 @@ import { addItem } from '../utils/cart';
 import { showToast } from '../utils/toast';
 import ProductCard from '../components/ProductCard';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import type { Product } from '../types';
 
 function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   // Gắn dữ liệu với slug đã tải: slug trên URL khác slug đã tải = đang tải. Nhờ vậy
   // chuyển giữa 2 sản phẩm (bấm vào sản phẩm liên quan) không còn hiện nhầm sản phẩm cũ.
-  const [state, setState] = useState<{ slug: string; product: any | null; related: any[] } | null>(null);
+  const [state, setState] = useState<{ slug: string; product: Product | null; related: Product[] } | null>(null);
   const [qty, setQty] = useState(1);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ function ProductDetail() {
     getProduct(slug)
       .then(async (product) => {
         const related = await getProducts({ category: product.category.slug })
-          .then((list: any[]) => list.filter((p) => p.id !== product.id).slice(0, 4))
+          .then(({ items }) => items.filter((p) => p.id !== product.id).slice(0, 4))
           .catch(() => []);
         if (cancelled) return;
         setQty(1);
@@ -52,6 +53,8 @@ function ProductDetail() {
     return <div className="container py-5 text-center text-muted">Đang tải...</div>;
   }
 
+  // product đã chắc chắn không null ở các hàm bên dưới (đã return sớm phía trên)
+  const current: Product = product;
   const outOfStock = product.stock <= 0;
   const maxQty = Math.min(99, product.stock);
   const discount = product.oldPrice
@@ -59,7 +62,7 @@ function ProductDetail() {
     : 0;
 
   function handleAddToCart(): boolean {
-    const result = addItem(product, qty);
+    const result = addItem(current, qty);
     if (result.added <= 0) {
       showToast(`Giỏ hàng đã có tối đa ${result.limit} sản phẩm này (hết số lượng còn lại).`, 'error');
       return false;
@@ -67,14 +70,14 @@ function ProductDetail() {
     if (result.capped) {
       showToast(`Chỉ thêm được ${result.added} - giỏ hàng đã đạt tối đa ${result.limit} sản phẩm này.`, 'error');
     } else {
-      showToast(`Đã thêm "${product.name}" vào giỏ hàng`);
+      showToast(`Đã thêm "${current.name}" vào giỏ hàng`);
     }
     return true;
   }
 
   function handleBuyNow() {
     // "Mua ngay" vẫn sang giỏ hàng kể cả khi giỏ đã đủ số lượng tối đa của sản phẩm này.
-    addItem(product, qty);
+    addItem(current, qty);
     navigate('/gio-hang');
   }
 

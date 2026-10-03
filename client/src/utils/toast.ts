@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export function showToast(message: string, type: 'success' | 'error' = 'success') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -27,6 +29,10 @@ export function showToast(message: string, type: 'success' | 'error' = 'success'
 }
 
 // Lấy thông báo lỗi tiếng Việt từ phản hồi API (axios), rơi về câu mặc định.
-export function apiErrorMessage(err: any, fallback = 'Có lỗi xảy ra, vui lòng thử lại') {
-  return err?.response?.data?.message || fallback;
+export function apiErrorMessage(err: unknown, fallback = 'Có lỗi xảy ra, vui lòng thử lại') {
+  return axios.isAxiosError<{ message?: string }>(err) ? err.response?.data?.message || fallback : fallback;
+}
+
+export function apiErrorStatus(err: unknown): number | undefined {
+  return axios.isAxiosError(err) ? err.response?.status : undefined;
 }

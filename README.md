@@ -28,12 +28,28 @@ cuối kỳ khoá "Lập trình Full-stack JavaScript".
 
 | Nhóm | Endpoint |
 |---|---|
-| Auth | `POST /api/auth/register`, `/login`, `/refresh`, `/change-password`; `GET/PATCH /api/auth/me` |
-| Sản phẩm | `GET /api/products?category=&search=&brand=&minPrice=&maxPrice=&sort=`, `GET /api/products/brands`, `GET /api/products/:slug` |
-| Danh mục | `GET /api/categories` |
-| Đơn hàng | `POST /api/orders`, `GET /api/orders/me`, `GET /api/orders/lookup?code=&phone=`, `PATCH /api/orders/:id/cancel` |
-| AI | `POST /api/ai/suggest` |
-| Admin | `/api/admin/stats`, `/api/admin/products`, `/api/admin/categories`, `/api/admin/orders` (+ `PATCH /:id/status`) |
+| Sức khoẻ | `GET /health` (ping DB thật, 503 nếu DB chết) |
+| Auth | `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/change-password`; `GET/PATCH /api/v1/auth/me` |
+| Sản phẩm | `GET /api/v1/products?category=&search=&brand=&minPrice=&maxPrice=&sort=&page=&limit=`, `GET /api/v1/products/brands`, `GET /api/v1/products/:slug` |
+| Danh mục | `GET /api/v1/categories` |
+| Đơn hàng | `POST /api/v1/orders`, `GET /api/v1/orders/me`, `GET /api/v1/orders/lookup?code=&phone=`, `PATCH /api/v1/orders/:id/cancel` |
+| AI | `POST /api/v1/ai/suggest` |
+| Admin | `/api/v1/admin/stats`, `/admin/products`, `/admin/categories`, `/admin/orders` (+ `PATCH /:id/status`) - danh sách sản phẩm/đơn có lọc + phân trang ở server |
+
+**Quy ước phản hồi** (theo bài RESTful API Design): thành công
+`{ "success": true, "data": ..., "meta"?: {...}, "message"?: "..." }`; lỗi
+`{ "success": false, "message": "...", "errors"?: [{ "field", "message" }] }`.
+Danh sách có `meta`: `total, page, limit, totalPages, hasNext, hasPrev`
+(`limit` tối đa 50; admin tối đa 100). Tiền tố `/api` cũ vẫn chạy song song
+với `/api/v1`.
+
+## Kiến trúc & bảo mật (theo checklist bài học)
+
+- **Server tách lớp**: `routes/` (mỏng, chỉ nhận request/trả response) → `services/` (nghiệp vụ + Prisma) → `schemas/` (Yup) ; `middleware/errorHandler` gom mọi lỗi về `AppError` / 500 chung chung, log bằng **pino** (che `password`/`token`)
+- **Xác thực**: access token 15 phút + refresh token 7 ngày; refresh token lưu **băm SHA-256** trong DB, **xoay vòng** mỗi lần làm mới (token cũ vô hiệu), thu hồi khi đăng xuất / đổi mật khẩu
+- **Chống tấn công**: helmet, CORS whitelist qua `FE_URL`, rate limit cho đăng nhập/đăng ký/đổi mật khẩu, tra cứu đơn và `/ai/*`; Yup `stripUnknown` chặn mass assignment; khách chỉ huỷ được đơn của mình (chống IDOR); không bao giờ trả `password`/`refreshTokenHash`
+- **Hiệu năng**: phân trang mọi danh sách, index theo cột lọc (`brand`, `hidden+createdAt`, `userId+status+createdAt`...), list chỉ `select` field cần hiển thị, đếm + lấy dữ liệu trong 1 `$transaction`; client dùng `React.lazy` (tách gói theo trang) + `React.memo`
+- **Test**: Vitest + Supertest (server, Prisma được giả lập nên không cần DB) và Vitest + React Testing Library (client)
 
 ## Công nghệ
 
@@ -102,14 +118,25 @@ npm run dev              # chạy tại http://localhost:5173
 |---|---|---|
 | `npm run dev` | client, server | Chạy dev server |
 | `npm run typecheck` | client, server | Kiểm tra kiểu TypeScript |
+| `npm test` / `npm run test:coverage` | client, server | Chạy test (kèm báo cáo độ phủ) |
+| `npm run lint` | client | oxlint |
 | `npm run build` | client, server | Build production |
 | `npm run seed` | server | Tạo lại dữ liệu mẫu (XOÁ dữ liệu cũ) |
 
 ## Deploy
 
-- **Client** → Vercel (build command `npm run build`, output `dist/`)
-- **Server** → Render (build `npm run build`, start `npm run start`)
-- **Database** → Render/Neon PostgreSQL
+- **Client** → Vercel (build command `npm run build`, output `dist/`; `client/vercel.json` đã có rewrite về `index.html` để F5 trên `/admin`, `/san-pham/...` không bị 404)
+- **Server** → Render, Root Directory `server`:
+  - Build: `npm install && npx prisma generate && npm run build`
+  - Start: `npm run start:prod` (= `prisma migrate deploy && node dist/index.js` - tự áp migration mới mỗi lần deploy)
+  - Health Check Path: `/health`; đặt `NODE_ENV=production`
+- **Database** → Neon PostgreSQL
+- **Docker** (tuỳ chọn): `server/Dockerfile` (multi-stage, chạy user không phải root, có HEALTHCHECK) + `docker-compose.yml`. *Chưa chạy thử vì máy không cài Docker.*
+- **CI**: `.github/workflows/ci.yml` - mỗi lần push/PR chạy typecheck + lint + test + build cho cả 2 phía
+
+**Rollback**: Render/Vercel đều có nút "Rollback/Redeploy" về bản deploy trước trong dashboard. Migration chỉ thêm cột/index (không xoá dữ liệu) nên quay lại code cũ vẫn chạy được trên DB đã migrate.
+
+**Lưu ý bảo mật đã biết**: `npm audit` ở server báo 3 mức "high" nằm trong chuỗi `prisma` CLI → `deepmerge-ts` (công cụ dev/migrate, không chạy trong request của người dùng); bản sửa hiện chỉ có bằng cách hạ Prisma xuống bản cũ hơn (breaking) nên tạm chấp nhận. Client: 0 lỗ hổng.
 
 Nhớ đặt biến môi trường đúng ở mỗi nơi: server cần `DATABASE_URL`,
 `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `GEMINI_API_KEY` (không bắt buộc),

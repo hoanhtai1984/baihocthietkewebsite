@@ -1,4 +1,5 @@
-import http from './http';
+import http, { unwrap, unwrapList } from './http';
+import type { Product } from '../types';
 
 export interface ProductFilters {
   category?: string;
@@ -7,16 +8,18 @@ export interface ProductFilters {
   minPrice?: number;
   maxPrice?: number;
   sort?: string;
+  page?: number;
+  limit?: number;
 }
 
 export function getProducts(params?: ProductFilters) {
-  return http.get('/products', { params }).then((r) => r.data);
+  return unwrapList<Product>(http.get('/products', { params }));
 }
 
-export function getBrands(category?: string): Promise<string[]> {
-  return http.get('/products/brands', { params: { category } }).then((r) => r.data);
+export function getBrands(category?: string) {
+  return unwrap<string[]>(http.get('/products/brands', { params: { category } }));
 }
 
 export function getProduct(slug: string) {
-  return http.get(`/products/${slug}`).then((r) => r.data);
+  return unwrap<Product>(http.get(`/products/${slug}`));
 }

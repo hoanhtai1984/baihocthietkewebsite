@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { updateMe, changePassword } from '../api/auth';
-import { updateStoredUser } from '../utils/authStorage';
+import { setAuth, updateStoredUser } from '../utils/authStorage';
 import { showToast, apiErrorMessage } from '../utils/toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
@@ -48,7 +48,9 @@ function Profile() {
     }
     setSavingPassword(true);
     try {
-      await changePassword({ currentPassword, newPassword });
+      // Server thu hồi mọi phiên cũ và trả phiên mới cho thiết bị này.
+      const session = await changePassword({ currentPassword, newPassword });
+      setAuth(session.user, session.accessToken, session.refreshToken);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');

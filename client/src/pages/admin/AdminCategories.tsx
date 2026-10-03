@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { adminGetCategories, adminCreateCategory, adminUpdateCategory, adminDeleteCategory } from '../../api/admin';
 import { showToast, apiErrorMessage } from '../../utils/toast';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import type { Category } from '../../types';
 
 const EMPTY_FORM = { id: null as number | null, name: '', icon: '', position: '0' };
 
 function AdminCategories() {
   useDocumentTitle('Quản lý danh mục');
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
@@ -33,7 +34,7 @@ function AdminCategories() {
     setShowForm(true);
   }
 
-  function openEdit(c: any) {
+  function openEdit(c: Category) {
     setForm({ id: c.id, name: c.name, icon: c.icon || '', position: String(c.position) });
     setError('');
     setShowForm(true);
@@ -61,9 +62,10 @@ function AdminCategories() {
     }
   }
 
-  async function handleDelete(c: any) {
-    if (c._count?.products > 0) {
-      showToast(`Danh mục "${c.name}" còn ${c._count.products} sản phẩm - hãy chuyển hoặc xoá sản phẩm trước.`, 'error');
+  async function handleDelete(c: Category) {
+    const productCount = c._count?.products ?? 0;
+    if (productCount > 0) {
+      showToast(`Danh mục "${c.name}" còn ${productCount} sản phẩm - hãy chuyển hoặc xoá sản phẩm trước.`, 'error');
       return;
     }
     if (!confirm(`Xoá danh mục "${c.name}"?`)) return;

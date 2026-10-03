@@ -12,7 +12,7 @@ function useCartCount() {
   useEffect(() => {
     function update() {
       const cart = getCart();
-      setCount(cart.reduce((sum: number, item: any) => sum + item.qty, 0));
+      setCount(cart.reduce((sum: number, item) => sum + item.qty, 0));
     }
     update();
     window.addEventListener(CART_UPDATED_EVENT, update);

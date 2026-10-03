@@ -1,5 +1,6 @@
-import http from './http';
+import http, { unwrap } from './http';
+import type { SuggestResult } from '../types';
 
 export function suggestProducts(query: string) {
-  return http.post('/ai/suggest', { query }).then((r) => r.data);
+  return unwrap<SuggestResult>(http.post('/ai/suggest', { query }));
 }

@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { suggestProducts } from '../api/ai';
 import { formatMoney } from '../utils/format';
 import { apiErrorMessage } from '../utils/toast';
+import type { Suggestion } from '../types';
 
 function AiSuggestBox() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [source, setSource] = useState<'ai' | 'keyword' | ''>('');
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
@@ -22,7 +23,7 @@ function AiSuggestBox() {
       setSuggestions(data.suggestions || []);
       setSource(data.source || '');
       setSearched(true);
-    } catch (err: any) {
+    } catch (err) {
       setError(apiErrorMessage(err, 'Không gợi ý được lúc này, thử lại sau'));
     } finally {
       setLoading(false);

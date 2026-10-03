@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './layout/Layout';
@@ -5,25 +6,32 @@ import AdminLayout from './layout/AdminLayout';
 import RequireAuth from './components/RequireAuth';
 
 import Home from './pages/Home';
-import Category from './pages/Category';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-import OrderSuccess from './pages/OrderSuccess';
-import OrderLookup from './pages/OrderLookup';
-import Login from './pages/Login';
-import MyOrders from './pages/MyOrders';
-import Profile from './pages/Profile';
-import NotFound from './pages/NotFound';
+const Category = lazy(() => import('./pages/Category'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
+const OrderLookup = lazy(() => import('./pages/OrderLookup'));
+const Login = lazy(() => import('./pages/Login'));
+const MyOrders = lazy(() => import('./pages/MyOrders'));
+const Profile = lazy(() => import('./pages/Profile'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminOrders from './pages/admin/AdminOrders';
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+
+// Trang chủ tải ngay (vào web là thấy); các trang còn lại + khu quản trị tách
+// thành từng gói riêng, chỉ tải khi người dùng thật sự vào (code splitting).
+function PageFallback() {
+  return <div className="container py-5 text-center text-muted">Đang tải...</div>;
+}
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
@@ -46,6 +54,7 @@ function App() {
             <Route path="don-hang" element={<AdminOrders />} />
           </Route>
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

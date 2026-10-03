@@ -1,4 +1,5 @@
-import http from './http';
+import http, { unwrap } from './http';
+import type { Order } from '../types';
 
 export function createOrder(data: {
   items: Array<{ productId: number; quantity: number }>;
@@ -6,17 +7,17 @@ export function createOrder(data: {
   guestPhone: string;
   guestAddress: string;
 }) {
-  return http.post('/orders', data).then((r) => r.data);
+  return unwrap<Order>(http.post('/orders', data));
 }
 
 export function getMyOrders() {
-  return http.get('/orders/me').then((r) => r.data);
+  return unwrap<Order[]>(http.get('/orders/me'));
 }
 
 export function cancelMyOrder(id: number) {
-  return http.patch(`/orders/${id}/cancel`).then((r) => r.data);
+  return unwrap<Order>(http.patch(`/orders/${id}/cancel`));
 }
 
 export function lookupOrder(code: string, phone: string) {
-  return http.get('/orders/lookup', { params: { code, phone } }).then((r) => r.data);
+  return unwrap<Order>(http.get('/orders/lookup', { params: { code, phone } }));
 }

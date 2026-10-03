@@ -3,6 +3,7 @@ import { lookupOrder } from '../api/orders';
 import { formatMoney } from '../utils/format';
 import { STATUS_BADGE, STATUS_LABEL } from '../utils/orderStatus';
 import { apiErrorMessage } from '../utils/toast';
+import type { Order } from '../types';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 function OrderLookup() {
@@ -11,7 +12,7 @@ function OrderLookup() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +25,7 @@ function OrderLookup() {
     setLoading(true);
     try {
       setOrder(await lookupOrder(code.trim(), phone.trim()));
-    } catch (err: any) {
+    } catch (err) {
       setError(apiErrorMessage(err, 'Không tra cứu được, thử lại sau'));
     } finally {
       setLoading(false);
@@ -57,7 +58,7 @@ function OrderLookup() {
             Địa chỉ: {order.guestAddress}
           </p>
           <ul className="list-unstyled mb-2 small">
-            {order.items.map((item: any) => (
+            {order.items.map((item) => (
               <li key={item.id}>{item.name} x{item.quantity} - {formatMoney(item.price * item.quantity)}</li>
             ))}
           </ul>

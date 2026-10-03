@@ -30,6 +30,9 @@ model User {
   password  String
   phone     String?
   role      Role     @default(CUSTOMER)
+  // Băm (SHA-256) của refresh token đang hợp lệ - lưu để THU HỒI được khi đăng
+  // xuất / đổi mật khẩu, và xoay vòng token mỗi lần refresh. null = chưa đăng nhập.
+  refreshTokenHash String?
   createdAt DateTime @default(now())
   orders    Order[]
 }
@@ -61,6 +64,8 @@ model Product {
   orderItems  OrderItem[]
 
   @@index([categoryId])
+  @@index([brand])
+  @@index([hidden, createdAt])
 }
 
 model Order {
@@ -75,6 +80,10 @@ model Order {
   totalAmount  Int
   createdAt    DateTime    @default(now())
   items        OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
@@ -86,4 +95,7 @@ model OrderItem {
   name      String
   price     Int
   quantity  Int
+
+  @@index([orderId])
+  @@index([productId])
 }

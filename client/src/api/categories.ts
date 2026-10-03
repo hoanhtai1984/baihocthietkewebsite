@@ -1,5 +1,6 @@
-import http from './http';
+import http, { unwrap } from './http';
+import type { Category } from '../types';
 
 export function getCategories() {
-  return http.get('/categories').then((r) => r.data);
+  return unwrap<Category[]>(http.get('/categories'));
 }

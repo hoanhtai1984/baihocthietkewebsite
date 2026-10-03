@@ -1,0 +1,15 @@
+# Chạy thử server trong container (DB vẫn là Neon/Postgres bên ngoài).
+#   1) copy server/.env.example thành server/.env rồi điền giá trị thật
+#   2) docker compose up --build
+# Chưa kiểm chứng trên máy này (máy không cài Docker) - cấu hình theo mẫu bài học.
+services:
+  server:
+    build: ./server
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+    restart: unless-stopped

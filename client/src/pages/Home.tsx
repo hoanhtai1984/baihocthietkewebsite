@@ -6,11 +6,12 @@ import ProductCard from '../components/ProductCard';
 import AiSuggestBox from '../components/AiSuggestBox';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import { apiErrorMessage } from '../utils/toast';
+import type { Category, Product } from '../types';
 
 function Home() {
   useDocumentTitle();
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -20,7 +21,7 @@ function Home() {
     Promise.all([getProducts(), getCategories()])
       .then(([p, c]) => {
         if (cancelled) return;
-        setProducts(p);
+        setProducts(p.items);
         setCategories(c);
         setError('');
       })

@@ -1,20 +1,11 @@
+import { memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatMoney } from '../utils/format';
 import { addItem } from '../utils/cart';
 import { showToast } from '../utils/toast';
+import type { Product } from '../types';
 
-interface Product {
-  id: number;
-  slug: string;
-  name: string;
-  brand: string;
-  price: number;
-  oldPrice?: number | null;
-  image: string;
-  stock: number;
-}
-
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product }: { product: Pick<Product, 'id' | 'slug' | 'name' | 'brand' | 'price' | 'oldPrice' | 'image' | 'stock'> }) {
   const navigate = useNavigate();
   const outOfStock = product.stock <= 0;
   const discount = product.oldPrice
@@ -74,4 +65,5 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export default ProductCard;
+// memo: danh sách sản phẩm không render lại cả loạt khi cha đổi state không liên quan
+export default memo(ProductCard);

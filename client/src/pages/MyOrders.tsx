@@ -4,11 +4,12 @@ import { getMyOrders, cancelMyOrder } from '../api/orders';
 import { formatMoney } from '../utils/format';
 import { STATUS_BADGE, STATUS_LABEL } from '../utils/orderStatus';
 import { showToast, apiErrorMessage } from '../utils/toast';
+import type { Order } from '../types';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 function MyOrders() {
   useDocumentTitle('Đơn hàng của tôi');
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -25,7 +26,7 @@ function MyOrders() {
 
   useEffect(load, []);
 
-  async function handleCancel(order: any) {
+  async function handleCancel(order: Order) {
     if (!confirm(`Huỷ đơn ${order.code}? Hành động này không thể hoàn tác.`)) return;
     setCancellingId(order.id);
     try {
@@ -78,7 +79,7 @@ function MyOrders() {
             </p>
           )}
           <ul className="list-unstyled mb-2 small">
-            {order.items.map((item: any) => (
+            {order.items.map((item) => (
               <li key={item.id}>
                 {item.name} x{item.quantity} - {formatMoney(item.price * item.quantity)}
               </li>

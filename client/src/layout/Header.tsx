@@ -2,16 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCategories } from '../api/categories';
 import { getProducts } from '../api/products';
+import type { Category, Product } from '../types';
 import useCartCount from '../hooks/useCartCount';
 import { useAuth } from '../context/AuthContext';
 import { formatMoney } from '../utils/format';
-
-interface Category {
-  id: number;
-  slug: string;
-  name: string;
-  icon?: string | null;
-}
 
 function Header() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -25,7 +19,7 @@ function Header() {
   const accountRef = useRef<HTMLDivElement>(null);
 
   const [keyword, setKeyword] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -66,8 +60,8 @@ function Header() {
     }
     debounceRef.current = setTimeout(() => {
       getProducts({ search: value })
-        .then((results: any[]) => {
-          setSuggestions(results.slice(0, 5));
+        .then(({ items }) => {
+          setSuggestions(items.slice(0, 5));
           setShowSuggestions(true);
         })
         .catch(() => setShowSuggestions(false));

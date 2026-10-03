@@ -1,4 +1,5 @@
 import { CART_UPDATED_EVENT } from '../hooks/useCartCount';
+import type { Product } from '../types';
 
 const STORAGE_KEY = 'dmnk_mini_cart_v1';
 const MAX_QTY = 99;
@@ -38,7 +39,7 @@ export interface AddResult {
 }
 
 // Thêm vào giỏ nhưng KHÔNG vượt tồn kho (và tối đa 99/sản phẩm).
-export function addItem(product: any, qty = 1): AddResult {
+export function addItem(product: Pick<Product, 'id' | 'slug' | 'name' | 'brand' | 'price' | 'image' | 'stock'>, qty = 1): AddResult {
   const cart = getCart();
   const limit = Math.min(MAX_QTY, Math.max(0, Number(product.stock ?? MAX_QTY)));
   const existing = cart.find((item) => item.id === product.id);

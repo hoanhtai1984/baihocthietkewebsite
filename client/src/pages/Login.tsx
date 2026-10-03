@@ -31,7 +31,7 @@ function Login() {
           : await register(name.trim(), email.trim(), password, phone.trim() || undefined);
       // Quay lại trang đang định vào; admin đăng nhập từ trang chung thì vào thẳng trang quản trị.
       navigate(from || (user.role === 'ADMIN' ? '/admin' : '/'), { replace: true });
-    } catch (err: any) {
+    } catch (err) {
       setError(apiErrorMessage(err, 'Có lỗi xảy ra, thử lại sau'));
     } finally {
       setSubmitting(false);

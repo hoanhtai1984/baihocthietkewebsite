@@ -4,22 +4,27 @@ import { formatMoney } from '../../utils/format';
 import { STATUS_BADGE, STATUS_LABEL, NEXT_STATUSES } from '../../utils/orderStatus';
 import { showToast, apiErrorMessage } from '../../utils/toast';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import Pagination from '../../components/Pagination';
+import type { Order, OrderStatus, PaginationMeta } from '../../types';
 
 function AdminOrders() {
   useDocumentTitle('Quản lý đơn hàng');
-  const [orders, setOrders] = useState<any[]>([]);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [page, setPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<OrderStatus | ''>('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
-  // Tải lại mỗi khi đổi bộ lọc trạng thái (lọc ở server)
+  // Tải lại mỗi khi đổi bộ lọc trạng thái hoặc trang (lọc + phân trang ở server)
   useEffect(() => {
     let cancelled = false;
-    adminGetOrders(filterStatus || undefined)
-      .then((data) => {
+    adminGetOrders({ status: filterStatus || undefined, page })
+      .then(({ items, meta: m }) => {
         if (cancelled) return;
-        setOrders(data);
+        setOrders(items);
+        setMeta(m);
         setLoadError('');
       })
       .catch((err) => {
@@ -31,9 +36,9 @@ function AdminOrders() {
     return () => {
       cancelled = true;
     };
-  }, [filterStatus]);
+  }, [filterStatus, page]);
 
-  async function handleStatusChange(order: any, status: string) {
+  async function handleStatusChange(order: Order, status: OrderStatus) {
     const label = STATUS_LABEL[status];
     const warning = status === 'CANCELLED' ? ' Tồn kho của các sản phẩm trong đơn sẽ được hoàn lại và KHÔNG thể mở lại đơn.' : '';
     if (!confirm(`Chuyển đơn ${order.code} sang "${label}"?${warning}`)) return;
@@ -54,7 +59,7 @@ function AdminOrders() {
           className="form-select form-select-sm"
           style={{ width: 'auto' }}
           value={filterStatus}
-          onChange={(e) => { setLoading(true); setFilterStatus(e.target.value); }}
+          onChange={(e) => { setLoading(true); setPage(1); setFilterStatus(e.target.value as OrderStatus | ''); }}
           aria-label="Lọc theo trạng thái"
         >
           <option value="">Mọi trạng thái</option>
@@ -110,7 +115,7 @@ function AdminOrders() {
                           <select
                             className="form-select form-select-sm"
                             value={o.status}
-                            onChange={(e) => handleStatusChange(o, e.target.value)}
+                            onChange={(e) => handleStatusChange(o, e.target.value as OrderStatus)}
                           >
                             <option value={o.status}>{STATUS_LABEL[o.status]}</option>
                             {next.map((s) => (
@@ -129,7 +134,7 @@ function AdminOrders() {
                             <strong>Địa chỉ:</strong> {o.guestAddress || '(chưa có địa chỉ)'}
                           </div>
                           <ul className="list-unstyled small mb-0">
-                            {o.items.map((item: any) => (
+                            {o.items.map((item) => (
                               <li key={item.id}>{item.name} × {item.quantity} - {formatMoney(item.price * item.quantity)}</li>
                             ))}
                           </ul>
@@ -141,6 +146,9 @@ function AdminOrders() {
               })}
             </tbody>
           </table>
+          {meta && (
+            <Pagination meta={meta} onPageChange={(p) => { setLoading(true); setPage(p); }} />
+          )}
         </div>
       )}
     </div>

@@ -69,6 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    // Thu hồi refresh token trên server (best-effort) rồi xoá phiên cục bộ ngay,
+    // không bắt người dùng đợi mạng.
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      authApi.logout(accessToken).catch(() => {
+        /* server không phản hồi: phiên cục bộ vẫn được xoá */
+      });
+    }
     clearAuth();
   }
 

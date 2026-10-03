@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { adminGetProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct } from '../../api/admin';
+import { useCallback, useEffect, useState } from 'react';
+import { adminGetProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct, type ProductInput } from '../../api/admin';
 import { getCategories } from '../../api/categories';
 import { formatMoney } from '../../utils/format';
 import { showToast, apiErrorMessage } from '../../utils/toast';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import Pagination from '../../components/Pagination';
+import type { Category, PaginationMeta, Product } from '../../types';
 
 const EMPTY_FORM = {
   id: null as number | null,
@@ -19,7 +21,7 @@ const EMPTY_FORM = {
 };
 
 // Thông số nhập dạng mỗi dòng "Tên: giá trị" <-> object lưu trong DB.
-function specsToText(specs: Record<string, unknown> | null) {
+function specsToText(specs: Record<string, unknown> | null | undefined) {
   return specs ? Object.entries(specs).map(([k, v]) => `${k}: ${v}`).join('\n') : '';
 }
 
@@ -37,8 +39,10 @@ function textToSpecs(text: string) {
 
 function AdminProducts() {
   useDocumentTitle('Quản lý sản phẩm');
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [page, setPage] = useState(1);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
@@ -47,33 +51,50 @@ function AdminProducts() {
   const [loadError, setLoadError] = useState('');
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'' | 'active' | 'hidden' | 'low'>('');
 
-  function load() {
-    Promise.all([adminGetProducts(), getCategories()])
-      .then(([p, c]) => {
-        setProducts(p);
-        setCategories(c);
+  // Gõ tìm kiếm: đợi 300ms rồi mới gọi server (lọc + phân trang ở server).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]));
+  }, []);
+
+  const load = useCallback(() => {
+    return adminGetProducts({
+      search: debouncedSearch || undefined,
+      categoryId: filterCategory ? Number(filterCategory) : undefined,
+      status: filterStatus || undefined,
+      page,
+    })
+      .then(({ items, meta: m }) => {
+        // Xoá sản phẩm cuối của trang cuối -> lùi về trang trước
+        if (items.length === 0 && m.page > 1 && m.totalPages > 0) {
+          setPage(m.totalPages);
+          return;
+        }
+        setProducts(items);
+        setMeta(m);
         setLoadError('');
       })
       .catch((err) => setLoadError(apiErrorMessage(err, 'Không tải được sản phẩm')))
       .finally(() => setLoading(false));
-  }
+  }, [debouncedSearch, filterCategory, filterStatus, page]);
 
-  useEffect(load, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
-  const visible = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    return products.filter((p) => {
-      if (keyword && !`${p.name} ${p.brand}`.toLowerCase().includes(keyword)) return false;
-      if (filterCategory && String(p.categoryId) !== filterCategory) return false;
-      if (filterStatus === 'hidden' && !p.hidden) return false;
-      if (filterStatus === 'active' && p.hidden) return false;
-      if (filterStatus === 'low' && p.stock > 5) return false;
-      return true;
-    });
-  }, [products, search, filterCategory, filterStatus]);
+  const visible = products;
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -81,7 +102,7 @@ function AdminProducts() {
     setShowForm(true);
   }
 
-  function openEdit(p: any) {
+  function openEdit(p: Product) {
     setForm({
       id: p.id,
       name: p.name,
@@ -89,10 +110,10 @@ function AdminProducts() {
       price: String(p.price),
       oldPrice: p.oldPrice ? String(p.oldPrice) : '',
       image: p.image,
-      description: p.description,
+      description: p.description || '',
       specs: specsToText(p.specs),
       stock: String(p.stock),
-      categoryId: String(p.categoryId),
+      categoryId: String(p.categoryId ?? p.category.id),
     });
     setError('');
     setShowForm(true);
@@ -102,7 +123,7 @@ function AdminProducts() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    const payload = {
+    const payload: ProductInput = {
       name: form.name,
       brand: form.brand,
       price: Number(form.price),
@@ -131,7 +152,7 @@ function AdminProducts() {
     }
   }
 
-  async function handleDelete(p: any) {
+  async function handleDelete(p: Product) {
     if (!confirm(`Xoá sản phẩm "${p.name}"?`)) return;
     try {
       await adminDeleteProduct(p.id);
@@ -142,7 +163,7 @@ function AdminProducts() {
     }
   }
 
-  async function handleToggleHidden(p: any) {
+  async function handleToggleHidden(p: Product) {
     try {
       await adminUpdateProduct(p.id, { hidden: !p.hidden });
       load();
@@ -224,7 +245,7 @@ function AdminProducts() {
           <input className="form-control form-control-sm" placeholder="Tìm theo tên hoặc hãng..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="col-6 col-md-3">
-          <select className="form-select form-select-sm" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+          <select className="form-select form-select-sm" value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}>
             <option value="">Mọi danh mục</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -232,7 +253,7 @@ function AdminProducts() {
           </select>
         </div>
         <div className="col-6 col-md-4">
-          <select className="form-select form-select-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <select className="form-select form-select-sm" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value as typeof filterStatus); setPage(1); }}>
             <option value="">Mọi trạng thái</option>
             <option value="active">Đang bán</option>
             <option value="hidden">Đã ẩn</option>
@@ -288,6 +309,7 @@ function AdminProducts() {
               ))}
             </tbody>
           </table>
+          {meta && <Pagination meta={meta} onPageChange={(p) => { setLoading(true); setPage(p); }} />}
         </div>
       )}
     </div>

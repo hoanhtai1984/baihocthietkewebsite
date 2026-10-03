@@ -44,8 +44,10 @@ export function updateStoredUser(user: AuthUser) {
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 }
 
-export function setAccessToken(accessToken: string) {
+// Refresh token xoay vòng: mỗi lần làm mới phải lưu CẢ cặp token mới.
+export function setTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem(ACCESS_KEY, accessToken);
+  localStorage.setItem(REFRESH_KEY, refreshToken);
 }
 
 export function clearAuth() {

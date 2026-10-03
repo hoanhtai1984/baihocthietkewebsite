@@ -5,7 +5,7 @@ import { formatMoney } from '../utils/format';
 import { createOrder } from '../api/orders';
 import { getProduct } from '../api/products';
 import { useAuth } from '../context/AuthContext';
-import { showToast, apiErrorMessage } from '../utils/toast';
+import { showToast, apiErrorMessage, apiErrorStatus } from '../utils/toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const PHONE_REGEX = /^(0|\+84)\d{9,10}$/;
@@ -50,8 +50,8 @@ function Cart() {
               messages.push(`Giá "${item.name}" đã thay đổi: ${formatMoney(item.price)} → ${formatMoney(p.price)}.`);
             }
             updated.push({ ...item, price: p.price, stock: p.stock, name: p.name, image: p.image, qty });
-          } catch (err: any) {
-            if (err.response?.status === 404) {
+          } catch (err) {
+            if (apiErrorStatus(err) === 404) {
               messages.push(`"${item.name}" không còn được bán nên được bỏ khỏi giỏ.`);
             } else {
               updated.push(item); // lỗi mạng: giữ nguyên, server sẽ kiểm tra lại lúc đặt hàng
@@ -98,7 +98,7 @@ function Cart() {
       });
       clearCart();
       navigate('/dat-hang-thanh-cong', { replace: true, state: { code: order.code, total: order.totalAmount, phone, isGuest: !isAuthenticated } });
-    } catch (err: any) {
+    } catch (err) {
       const message = apiErrorMessage(err, 'Đặt hàng thất bại, thử lại sau');
       setError(message);
       showToast(message, 'error');

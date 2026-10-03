@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { prisma } from '../lib/prisma';
+import { sendSuccess } from '../utils/apiResponse';
+import { listCategories } from '../services/categoryService';
 
 const router = Router();
 
 router.get('/', async (_req, res, next) => {
   try {
-    const categories = await prisma.category.findMany({ orderBy: { position: 'asc' } });
-    res.json(categories);
+    sendSuccess(res, await listCategories());
   } catch (err) {
     next(err);
   }

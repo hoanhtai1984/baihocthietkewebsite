@@ -4,6 +4,7 @@ import { adminGetStats } from '../../api/admin';
 import { formatMoney } from '../../utils/format';
 import { STATUS_BADGE, STATUS_LABEL } from '../../utils/orderStatus';
 import { apiErrorMessage } from '../../utils/toast';
+import type { AdminStats } from '../../types';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 function StatCard({ icon, label, value, to, tone }: { icon: string; label: string; value: string | number; to?: string; tone: string }) {
@@ -21,7 +22,7 @@ function StatCard({ icon, label, value, to, tone }: { icon: string; label: strin
 
 function AdminDashboard() {
   useDocumentTitle('Tổng quan quản trị');
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -72,7 +73,7 @@ function AdminDashboard() {
           ) : (
             <table className="table table-sm align-middle">
               <tbody>
-                {stats.recentOrders.map((o: any) => (
+                {stats.recentOrders.map((o) => (
                   <tr key={o.id}>
                     <td className="fw-bold">{o.code}</td>
                     <td>{o.guestName || o.user?.name}</td>
@@ -92,7 +93,7 @@ function AdminDashboard() {
           ) : (
             <table className="table table-sm align-middle">
               <tbody>
-                {stats.lowStock.map((p: any) => (
+                {stats.lowStock.map((p) => (
                   <tr key={p.id}>
                     <td>{p.name} {p.hidden && <span className="badge bg-secondary">Đã ẩn</span>}</td>
                     <td className="text-end">

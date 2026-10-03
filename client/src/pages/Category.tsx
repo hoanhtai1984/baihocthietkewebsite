@@ -3,6 +3,8 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { getProducts, getBrands } from '../api/products';
 import { getCategories } from '../api/categories';
 import ProductCard from '../components/ProductCard';
+import Pagination from '../components/Pagination';
+import type { Category as CategoryType, PaginationMeta, Product } from '../types';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import { apiErrorMessage } from '../utils/toast';
 
@@ -55,17 +57,19 @@ function Category() {
   const brand = searchParams.get('brand') || '';
   const sort = searchParams.get('sort') || 'newest';
   const price = searchParams.get('price') || '';
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryType[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
   // Kết quả gắn với "khoá truy vấn" của lần tải đó: khoá hiện tại khác khoá đã
   // tải = đang tải. Cách này không cần setState đồng bộ trong effect và không
   // bao giờ kẹt "đang tải" khi bộ lọc không đổi.
-  const queryKey = JSON.stringify([categorySlug, search, brand, sort, price, reloadKey]);
-  const [loaded, setLoaded] = useState<{ key: string; data: any[]; error: string } | null>(null);
+  const queryKey = JSON.stringify([categorySlug, search, brand, sort, price, page, reloadKey]);
+  const [loaded, setLoaded] = useState<{ key: string; data: Product[]; meta: PaginationMeta | null; error: string } | null>(null);
   const loading = loaded?.key !== queryKey;
   const products = loaded?.data ?? [];
+  const meta = loaded?.meta ?? null;
   const error = loaded?.key === queryKey ? loaded.error : '';
 
   useEffect(() => {
@@ -86,17 +90,18 @@ function Category() {
       minPrice: min ? Number(min) : undefined,
       maxPrice: max ? Number(max) : undefined,
       sort,
+      page,
     })
-      .then((data) => {
-        if (!cancelled) setLoaded({ key: queryKey, data, error: '' });
+      .then(({ items, meta: m }) => {
+        if (!cancelled) setLoaded({ key: queryKey, data: items, meta: m, error: '' });
       })
       .catch((err) => {
-        if (!cancelled) setLoaded({ key: queryKey, data: [], error: apiErrorMessage(err, 'Không tải được danh sách sản phẩm') });
+        if (!cancelled) setLoaded({ key: queryKey, data: [], meta: null, error: apiErrorMessage(err, 'Không tải được danh sách sản phẩm') });
       });
     return () => {
       cancelled = true;
     };
-  }, [categorySlug, search, brand, sort, price, queryKey]);
+  }, [categorySlug, search, brand, sort, price, page, queryKey]);
 
   const activeCategory = categories.find((c) => c.slug === categorySlug);
   const title = activeCategory ? activeCategory.name : search ? `Kết quả cho "${search}"` : 'Tất cả sản phẩm';
@@ -106,6 +111,8 @@ function Category() {
     const next = new URLSearchParams(searchParams);
     if (value && !(key === 'sort' && value === 'newest')) next.set(key, value);
     else next.delete(key);
+    // Đổi bộ lọc/sắp xếp thì về trang 1 (trang cũ có thể không còn tồn tại)
+    if (key !== 'page') next.delete('page');
     setSearchParams(next);
   }
 
@@ -176,7 +183,7 @@ function Category() {
         <div className="col-lg-9">
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h1 className="fw-bold fs-4 mb-0">
-              {title} {!loading && !error && <small className="text-muted fs-6 fw-normal">({products.length} sản phẩm)</small>}
+              {title} {!loading && !error && <small className="text-muted fs-6 fw-normal">({meta?.total ?? products.length} sản phẩm)</small>}
             </h1>
             <select className="form-select form-select-sm" style={{ width: 'auto' }} value={sort} onChange={(e) => setParam('sort', e.target.value)} aria-label="Sắp xếp">
               {SORT_OPTIONS.map((o) => (
@@ -202,6 +209,15 @@ function Category() {
                 </div>
               ))}
             </div>
+          )}
+          {meta && !loading && !error && (
+            <Pagination
+              meta={meta}
+              onPageChange={(p) => {
+                setParam('page', p > 1 ? String(p) : '');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
           )}
         </div>
       </div>
